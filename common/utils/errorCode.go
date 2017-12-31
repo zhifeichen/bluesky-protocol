@@ -8,7 +8,7 @@ const (
 	CONFIG_ARG_ERROR
 	CONFIG_NOT_FOUND
 	CONFIG_PARSE_ERROR
-
+	READ_FILE_ERROR
 	INER_TYPE_INVALID
 
 	CHAIN_HANDLE_MSG_ERROR
@@ -17,6 +17,7 @@ const (
 var (
 	ErrorMap = map[int]string{
 		OK:                 "OK",
+		READ_FILE_ERROR: 	"文件不存在",
 		CONFIG_NOT_FOUND:   "配置文件错误",
 		CONFIG_ARG_ERROR:   "请指定配置文件",
 		CONFIG_PARSE_ERROR: "解析配置文件错误",
