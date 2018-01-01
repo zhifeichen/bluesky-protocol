@@ -2,11 +2,11 @@ package cfg
 
 import (
 	"fmt"
-	"plasma/common"
 	"sync"
 	"encoding/json"
 	"os"
-	"plasma/common/logger"
+	"bluesky-protocol/common/utils"
+	"bluesky-protocol/common/logger"
 )
 
 var (
