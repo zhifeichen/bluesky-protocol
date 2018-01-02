@@ -7,40 +7,40 @@ import (
 	"io"
 )
 
-const (
-	START_SYMBLE byte = 0x40
-	END_SYMBLE byte = 0x23
-)
-
 func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	start := 0
-	for advance = 0; advance < len(data); advance++ {
+
+	hasHeader := false
+	for advance = 0; advance < len(data)-1; advance++ {
 		if data[advance] == START_SYMBLE && data[advance + 1] == START_SYMBLE {
+			hasHeader = true
 			break
 		}
 	}
-	if advance == len(data) {
-		err = errors.New("out of range")
+	if !hasHeader {
+		// 未发现数据头,丢弃数据
 		return
 	}
-	for restart := true; restart; {
-		start = advance
-		for advance += 2; advance < len(data); advance++ {
-			if data[advance] == END_SYMBLE && data[advance + 1] == END_SYMBLE {
-				restart = false
-				break
-			}
-			if data[advance] == START_SYMBLE && data[advance + 1] == START_SYMBLE {
-				break
-			}
+	start := advance
+	end := advance + 2
+	hasTail := false
+	for ; !hasTail && end < len(data) - 1; end ++{
+		if data[end] == END_SYMBLE && data[end + 1] == END_SYMBLE {
+			hasTail = true
+			break
 		}
-		if advance >= len(data) - 1 {
-			err = errors.New("out of range")
+		if data[end] == START_SYMBLE && data[end + 1] == START_SYMBLE {
+			// TODO 丢弃数据? 这里由于设备协议问题,在协议中不会出现magic Num
+			advance = end
 			return
 		}
 	}
-	advance += 2
-	token = data[start: advance]
+	if !hasTail{
+		// 数据包未结束,等待接收数据
+		return
+	}
+	end += 1
+	advance = end
+	token = data[start: end + 1]
 	return
 }
 
@@ -48,8 +48,6 @@ func Get(r io.Reader, msgChan chan []byte) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(split)
 	for scanner.Scan() {
-		msg:= scanner.Bytes()
-		fmt.Println("scan: ",msg)
 		msgChan <- scanner.Bytes()
 	}
 	msgChan <- []byte{}

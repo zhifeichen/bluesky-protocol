@@ -15,35 +15,6 @@ import (
 )
 
 func open() {
-	//msgFile := "./agentMock/mock/msg.txt"
-	//fin, err := os.Open(msgFile)
-	//
-	//if err != nil {
-	//	fmt.Println("open file error!", err)
-	//	return
-	//}
-	//defer fin.Close()
-	//
-	//rd := bufio.NewReader(fin)
-	//for {
-	//	line, isPrefix,err := rd.ReadLine()
-	//	fmt.Println(isPrefix,err)
-	//	for err == nil && !isPrefix {
-	//		sender.Send(line)
-	//		time.Sleep(time.Duration(config.Config().Interval) * time.Second)
-	//	}
-	//	if isPrefix {
-	//		logger.Info.Println("buffer size to small")
-	//		break
-	//	}
-	//	if err != io.EOF {
-	//		logger.Info.Println(err)
-	//		break
-	//	} else {
-	//		logger.Info.Println("读取文件完成")
-	//		break
-	//	}
-	//}
 	msgFile := "./agentMock/mock/msg.txt"
 	fin, err := os.Open(msgFile)
 	if err != nil {
@@ -66,7 +37,7 @@ func open() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Printf("%s: %v: %v\n",line, []byte(line), binMsg)
+		fmt.Printf("%s: %v\n",line, binMsg)
 		sender.Send(binMsg)
 		time.Sleep(time.Duration(config.Config().Interval) * time.Second)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
+	"time"
 )
 
 func Send(msg []byte) error {
@@ -23,8 +24,15 @@ func Send(msg []byte) error {
 		return err
 	}
 	defer conn.Close()
-	
-	ret, err := conn.Write(msg)
+
+	split := len(msg)/2
+
+	ret, err := conn.Write(msg[:split])
+	fmt.Println("send data:",msg[:split])
+	time.Sleep(time.Duration(200)* time.Millisecond)
+	ret1, err:= conn.Write(msg[split:])
+	fmt.Println("send data:",msg[split:])
+	ret += ret1
 	if err != nil {
 		fmt.Println("write msg error: ", err)
 		return err
