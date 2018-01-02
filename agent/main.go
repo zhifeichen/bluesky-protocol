@@ -6,6 +6,7 @@ import (
 	"os"
 	"bluesky-protocol/agent/cfg"
 	"bluesky-protocol/common/logger"
+	"bluesky-protocol/agent/receiver"
 )
 
 func main(){
@@ -36,6 +37,9 @@ func main(){
 
 
 	logger.Info.Println("启动服务ip:",cfg.Config().Ip," port:",cfg.Config().Port," ... [ok]")
+
+	go receiver.Start()
+
 	// TODO 接收信号?
 	select {}
 }

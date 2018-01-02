@@ -1,1 +1,4 @@
-{"debug":true,"ip":"127.0.0.1","port":50000,"uuid":"G_127.0.0.1:50000","logFile":"./agent/logs/access.log"}
+{"debug":true,
+  "ip":"127.0.0.1",
+  "port":10001,
+  "uuid":"G_127.0.0.1:50000","logFile":"./agent/logs/access.log"}

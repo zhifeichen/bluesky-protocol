@@ -33,5 +33,6 @@ func Send(msg []byte) error {
 		fmt.Println("ret not equ send error: ", err)
 		return errors.New("send error!")
 	}
+	fmt.Println("发送数据:",msg,"| ret:",ret,"...  [ok]")
 	return nil
 }

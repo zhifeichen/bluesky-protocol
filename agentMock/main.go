@@ -2,10 +2,10 @@ package main
 
 import (
 	"bluesky-protocol/agentMock/mock/msg"
-	"bluesky-protocol/agentMock/mock/config"
+	mockConfig "bluesky-protocol/agentMock/mock/config"
 )
 
 func main() {
-	config.ParseConfig("./config.json")
+	mockConfig.ParseConfig("./agentMock/mock/config.json")
 	mock.Start()
 }

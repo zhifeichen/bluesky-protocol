@@ -48,6 +48,8 @@ func Get(r io.Reader, msgChan chan []byte) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(split)
 	for scanner.Scan() {
+		msg:= scanner.Bytes()
+		fmt.Println("scan: ",msg)
 		msgChan <- scanner.Bytes()
 	}
 	msgChan <- []byte{}

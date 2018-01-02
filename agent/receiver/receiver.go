@@ -3,16 +3,16 @@ package receiver
 import (
 	"net"
 	"fmt"
-	"bluesky-protocol/agentMock/protocol/bluesky"
-	"bluesky-protocol/agentMock/receiver/config"
+	"bluesky-protocol/agent/protocol/bluesky"
 	"bluesky-protocol/common/logger"
+	config "bluesky-protocol/agent/cfg"
 )
 
 // Start start receive
 func Start() {
-	ip := config.Config().IP
+	ip := config.Config().Ip
 	if ip == "" {
-		logger.Error.Panicln("socket listen配置不正确", config.Config().IP)
+		logger.Error.Panicln("socket listen配置不正确", config.Config().Ip)
 		return
 	}
 	port := config.Config().Port
@@ -40,6 +40,7 @@ func Start() {
 		for {
 			msg := <- msgChan
 			if len(msg) == 0 {
+				//fmt.Println("msg is eof")
 				break
 			}
 			fmt.Printf("receiced[%d]: %v; message is %v\n", i, msg, bluesky.CheckCRC(msg))
