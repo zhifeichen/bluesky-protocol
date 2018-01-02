@@ -42,3 +42,29 @@ func TestUnmarshal(t *testing.T){
 		}
 	})
 }
+
+func TestMarshal(t *testing.T) {
+	t.Run("data len == 0", func(t *testing.T) {
+		msg, err := nilC.Marshal()
+		if err != nil {
+			t.Error(err)
+		}
+		binMsg, _ := hex.DecodeString(nilData)
+		if !bytes.Equal(msg, binMsg) {
+			t.Error(err.Error())
+		}
+	})
+	t.Run("data len != 0", func(t *testing.T) {
+		msg, err := dataC.Marshal()
+		if err != nil {
+			t.Error(err)
+		}
+		binMsg, err := hex.DecodeString(data)
+		if err != nil {
+			t.Error(err)
+		}
+		if !bytes.Equal(msg, binMsg) {
+			t.Error(msg, binMsg)
+		}
+	})
+}

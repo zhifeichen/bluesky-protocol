@@ -22,6 +22,10 @@ type Common struct {
 	crc       uint8
 }
 
+func Len(c *Common) int {
+	return 30 + len(c.data)
+}
+
 func (c *Common) Unmarshal(data []byte) error {
 	if len(data) < 30 {
 		return errors.New("data too short")
@@ -76,4 +80,65 @@ func (c *Common) Unmarshal(data []byte) error {
 	}
 	c.crc = data[i]
 	return nil
+}
+
+func (c *Common) Marshal() ([]byte, error) {
+	size := Len(c)
+	buf := make([]byte, size)
+	var i int
+	if int(c.dataLen) != len(c.data) {
+		return []byte{}, errors.New("invalid Common data")
+	}
+	buf[i] = 0x40
+	i++
+	buf[i] = 0x40
+	i++
+	err := WriteUint16(buf[i:], c.serailNo)
+	if err != nil {
+		return []byte{}, err
+	}
+	i += 2
+	buf[i] = c.mainVer
+	i++
+	buf[i] = c.clientVer
+	i++
+	buf[i] = c.second
+	i++
+	buf[i] = c.minute
+	i++
+	buf[i] = c.hour
+	i++
+	buf[i] = c.day
+	i++
+	buf[i] = c.month
+	i++
+	buf[i] = c.year
+	i++
+	err = WriteUint48(buf[i:], c.src)
+	if err != nil {
+		return []byte{}, err
+	}
+	i += 6
+	err = WriteUint48(buf[i:], c.dst)
+	if err != nil {
+		return []byte{}, err
+	}
+	i += 6
+	err = WriteUint16(buf[i:], c.dataLen)
+	if err != nil {
+		return []byte{}, err
+	}
+	i += 2
+	buf[i] = c.cmd
+	i++
+	if c.dataLen > 0 {
+		copy(buf[i:], c.data)
+		i += int(c.dataLen)
+	}
+	buf[i] = c.crc
+	i++
+	buf[i] = 0x23
+	i++
+	buf[i] = 0x23
+	return buf, nil
 }
