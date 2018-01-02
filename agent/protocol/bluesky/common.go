@@ -2,24 +2,32 @@ package bluesky
 
 import (
 	"errors"
+	"encoding/binary"
+	"bytes"
+	"unsafe"
 )
 
+type Header struct{
+	MagicNum  uint16
+	SerailNo  uint16
+	MainVer   uint8
+	ClientVer uint8
+	Second    uint8
+	Minute    uint8
+	Hour      uint8
+	Day       uint8
+	Month     uint8
+	Year      uint8
+	Src       [6]byte // 48bit 6byte
+	Dst       [6]byte // 48bit 6byte
+	DataLen   uint16 // 应用数据单元长度
+	Cmd       uint8  // 0x00: 预留; 0x01: 控制命令; 0x02: 发送数据; 0x03: 确认;0x04: 请求; 0x05: 应答; 0x06: 否认; 0x07~0x7F: 预留; 0x80~0xFF: 用户自定义;
+}
+
 type Common struct {
-	serailNo  uint16
-	mainVer   uint8
-	clientVer uint8
-	second    uint8
-	minute    uint8
-	hour      uint8
-	day       uint8
-	month     uint8
-	year      uint8
-	src       uint64 // 48bit 6byte
-	dst       uint64 // 48bit 6byte
-	dataLen   uint16 // 应用数据单元长度
-	cmd       uint8  // 0x00: 预留; 0x01: 控制命令; 0x02: 发送数据; 0x03: 确认;0x04: 请求; 0x05: 应答; 0x06: 否认; 0x07~0x7F: 预留; 0x80~0xFF: 用户自定义;
+	Header
 	data      []byte
-	crc       uint8
+	Crc       uint8
 }
 
 func Len(c *Common) int {
@@ -27,58 +35,68 @@ func Len(c *Common) int {
 }
 
 func (c *Common) Unmarshal(data []byte) error {
-	if len(data) < 30 {
-		return errors.New("data too short")
-	}
-	i := 2
-	serailNo, err := ReadUint16(data[i:])
-	if err != nil {
+	//[64 64 0 0 1 1 12 59 12 27 12 17 103 43 0 0 0 0 56 91 1 0 0 0 0 0 2 181 35 35]
+	//if len(data) < 30 {
+	//	return errors.New("data too short")
+	//}
+	//i := 2
+	//serailNo, err := ReadUint16(data[i:])
+	//if err != nil {
+	//	return err
+	//}
+	//c.SerailNo = serailNo
+	//i += 2
+	//c.MainVer = data[i]
+	//i++
+	//c.ClientVer = data[i]
+	//i++
+	//c.Second = data[i]
+	//i++
+	//c.Minute = data[i]
+	//i++
+	//c.Hour = data[i]
+	//i++
+	//c.Day = data[i]
+	//i++
+	//c.Month = data[i]
+	//i++
+	//c.Year = data[i]
+	//i++
+	////src, err := ReadUint48(data[i:])
+	////if err != nil {
+	////	return err
+	////}
+	//copy(c.Src[:],data[i:i+7])
+	//i += 6
+	//copy(c.Dst[:],data[i:i+7])
+	//i += 6
+	//dataLen, err := ReadUint16(data[i:])
+	//if err != nil {
+	//	return err
+	//}
+	//c.DataLen = dataLen
+	//i += 2
+	//c.cmd = data[i]
+	//i++
+	//if c.DataLen > 0 {
+	//	c.data = make([]byte, c.DataLen)
+	//	copy(c.data, data[i: i + int(c.DataLen)])
+	//	i += int(c.DataLen)
+	//}
+	//c.crc = data[i]
+
+	//TODO 注意结构中字节对齐问题
+	if err :=binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &c.Header); err != nil{
 		return err
 	}
-	c.serailNo = serailNo
-	i += 2
-	c.mainVer = data[i]
-	i++
-	c.clientVer = data[i]
-	i++
-	c.second = data[i]
-	i++
-	c.minute = data[i]
-	i++
-	c.hour = data[i]
-	i++
-	c.day = data[i]
-	i++
-	c.month = data[i]
-	i++
-	c.year = data[i]
-	i++
-	src, err := ReadUint48(data[i:])
-	if err != nil {
-		return err
+	st:=int(unsafe.Sizeof(c.Header))-1
+	len:= st +int(c.DataLen)
+	if c.DataLen > 0{
+		c.data = make([]byte, c.DataLen)
+
+		copy(c.data, data[st: len])
 	}
-	c.src = src
-	i += 6
-	dst, err := ReadUint48(data[i:])
-	if err != nil {
-		return err
-	}
-	c.dst = dst
-	i += 6
-	dataLen, err := ReadUint16(data[i:])
-	if err != nil {
-		return err
-	}
-	c.dataLen = dataLen
-	i += 2
-	c.cmd = data[i]
-	i++
-	if c.dataLen > 0 {
-		c.data = make([]byte, c.dataLen)
-		copy(c.data, data[i: i + int(c.dataLen)])
-		i += int(c.dataLen)
-	}
-	c.crc = data[i]
+	c.Crc = data[len]
 	return nil
 }
 
@@ -86,56 +104,58 @@ func (c *Common) Marshal() ([]byte, error) {
 	size := Len(c)
 	buf := make([]byte, size)
 	var i int
-	if int(c.dataLen) != len(c.data) {
+	if int(c.DataLen) != len(c.data) {
 		return []byte{}, errors.New("invalid Common data")
 	}
 	buf[i] = 0x40
 	i++
 	buf[i] = 0x40
 	i++
-	err := WriteUint16(buf[i:], c.serailNo)
+	err := WriteUint16(buf[i:], c.SerailNo)
 	if err != nil {
 		return []byte{}, err
 	}
 	i += 2
-	buf[i] = c.mainVer
+	buf[i] = c.MainVer
 	i++
-	buf[i] = c.clientVer
+	buf[i] = c.ClientVer
 	i++
-	buf[i] = c.second
+	buf[i] = c.Second
 	i++
-	buf[i] = c.minute
+	buf[i] = c.Minute
 	i++
-	buf[i] = c.hour
+	buf[i] = c.Hour
 	i++
-	buf[i] = c.day
+	buf[i] = c.Day
 	i++
-	buf[i] = c.month
+	buf[i] = c.Month
 	i++
-	buf[i] = c.year
+	buf[i] = c.Year
 	i++
-	err = WriteUint48(buf[i:], c.src)
-	if err != nil {
-		return []byte{}, err
-	}
+	//err = WriteUint48(buf[i:], c.Src)
+	//if err != nil {
+	//	return []byte{}, err
+	//}
+	copy(buf[i:],c.Src[:])
 	i += 6
-	err = WriteUint48(buf[i:], c.dst)
-	if err != nil {
-		return []byte{}, err
-	}
+	//err = WriteUint48(buf[i:], c.Dst)
+	//if err != nil {
+	//	return []byte{}, err
+	//}
+	copy(buf[i:],c.Dst[:])
 	i += 6
-	err = WriteUint16(buf[i:], c.dataLen)
+	err = WriteUint16(buf[i:], c.DataLen)
 	if err != nil {
 		return []byte{}, err
 	}
 	i += 2
-	buf[i] = c.cmd
+	buf[i] = c.Cmd
 	i++
-	if c.dataLen > 0 {
+	if c.DataLen > 0 {
 		copy(buf[i:], c.data)
-		i += int(c.dataLen)
+		i += int(c.DataLen)
 	}
-	buf[i] = c.crc
+	buf[i] = c.Crc
 	i++
 	buf[i] = 0x23
 	i++
