@@ -39,3 +39,16 @@ func TestDecode(t *testing.T){
 		fmt.Println(err,"cm:",cm)
 	})
 }
+
+func TestType(t *testing.T) {
+	RegisterAll()
+	err := HandleRawData(24, []byte{24, 1, 1, 0, 0, 59, 12, 27, 12, 17})
+	if err != nil {
+		t.Error(err)
+	}
+	d := DataUnit24{}
+	err = d.Unmarshal([]byte{24, 1, 1, 0, 0, 59, 12, 27, 12, 17})
+	if err != nil {
+		t.Error(d)
+	}
+}
