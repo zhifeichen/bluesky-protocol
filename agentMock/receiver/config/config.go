@@ -3,7 +3,7 @@ package config
 import (
 	"sync"
 	"encoding/json"
-	"github.com/zhifeichen/bluesky-protocol/common/utils"
+	"bluesky-protocol/common/utils"
 )
 
 // ServerConfig server config

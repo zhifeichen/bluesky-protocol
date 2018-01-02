@@ -22,7 +22,7 @@ type ChainMsg struct {
 	Data     interface{}   			// data
 	Sync     bool          			// 是否等待消息执行结果返回
 	// TODO 如何更好的返回结果??
-	syncChan chan ChainMsg 			// 接收结果消息返回channel
+	syncChan chan *ChainMsgACK 			// 接收结果消息返回channel
 	Track    bool					// 是否追踪消息
 	Tracks   []ChainMsgTrace		// 追踪结果
 }
@@ -35,7 +35,7 @@ func NewMsg(t chainMsgType, d interface{}, sync bool) *ChainMsg {
 		Sync:sync,
 	}
 	if sync {
-		msg.syncChan = make(chan ChainMsg)
+		msg.syncChan = make(chan *ChainMsgACK)
 	}
 	return msg
 }

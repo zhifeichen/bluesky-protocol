@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/zhifeichen/bluesky-protocol/mock/sender"
-	"github.com/zhifeichen/bluesky-protocol/mock/config"
+	sender "bluesky-protocol/agentMock/mock/sender"
+	"bluesky-protocol/agentMock/mock/config"
 )
 
 func open() {
-	msgFile := "./msg.txt"
+	msgFile := "./agentMock/mock/msg.txt"
 	fin, err := os.Open(msgFile)
 	if err != nil {
 		fmt.Println("open file error!", err)

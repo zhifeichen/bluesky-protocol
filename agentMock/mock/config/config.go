@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"sync"
-	"github.com/zhifeichen/bluesky-protocol/common/utils"
+	"bluesky-protocol/common/utils"
 )
 
 type MockConfig struct {

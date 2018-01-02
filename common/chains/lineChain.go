@@ -17,7 +17,7 @@ type LineChain struct {
 	name  string
 	items []IItem
 	msgs  chan *ChainMsg
-	once  sync.Once
+	once  *sync.Once
 }
 
 func NewLineChains(name string) *LineChain {
@@ -114,10 +114,10 @@ func (c *LineChain)run() {
 	拷贝任务链并新增任务, 避免任务链执行过程中变化的问题
  */
 func (c *LineChain)handleAddItemMsg(msg *ChainMsg) error {
-	t := make([]byte, len(c.items))
+	t := make([]IItem, len(c.items))
 	copy(t, c.items)
 	c.items = t
-	if msg.Sync && msg.syncChan {
+	if msg.Sync && msg.syncChan != nil {
 		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil)
 	}
 	return nil

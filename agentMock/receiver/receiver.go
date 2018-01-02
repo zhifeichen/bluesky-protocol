@@ -1,11 +1,11 @@
 package receiver
 
 import (
-	"github.com/zhifeichen/bluesky-protocol/common/logger"
-	"github.com/zhifeichen/bluesky-protocol/config"
-	"github.com/zhifeichen/bluesky-protocol/protocol/bluesky"
 	"net"
 	"fmt"
+	"bluesky-protocol/agentMock/protocol/bluesky"
+	"bluesky-protocol/agentMock/receiver/config"
+	"bluesky-protocol/common/logger"
 )
 
 // Start start receive

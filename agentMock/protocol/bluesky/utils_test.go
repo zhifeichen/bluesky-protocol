@@ -1,9 +1,8 @@
-package bluesky_test
+package bluesky
 
 import (
 	"fmt"
 	"testing"
-	"github.com/zhifeichen/bluesky-protocol/protocol/bluesky"
 )
 
 var (
@@ -13,7 +12,7 @@ var (
 
 func TestRead(t *testing.T) {
 	t.Run("read uint16", func(t *testing.T) {
-		ret, err := bluesky.ReadUint16(testData)
+		ret, err := ReadUint16(testData)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -23,7 +22,7 @@ func TestRead(t *testing.T) {
 	})
 
 	t.Run("read uint32", func(t *testing.T) {
-		ret, err := bluesky.ReadUint32(testData)
+		ret, err := ReadUint32(testData)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -33,7 +32,7 @@ func TestRead(t *testing.T) {
 	})
 
 	t.Run("read uint48", func(t *testing.T) {
-		ret, err := bluesky.ReadUint48(testData)
+		ret, err := ReadUint48(testData)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -43,7 +42,7 @@ func TestRead(t *testing.T) {
 	})
 
 	t.Run("read uint64", func(t *testing.T) {
-		ret, err := bluesky.ReadUint64(testData)
+		ret, err := ReadUint64(testData)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -64,7 +63,7 @@ func checkBuf(t *testing.T, buf []byte, cap int) {
 func TestWrite(t *testing.T) {
 	t.Run("write uint16", func(t *testing.T) {
 		testBuf = make([]byte, 8)
-		err := bluesky.WriteUint16(testBuf, 0x0201)
+		err := WriteUint16(testBuf, 0x0201)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -74,7 +73,7 @@ func TestWrite(t *testing.T) {
 
 	t.Run("write uint32", func(t *testing.T) {
 		testBuf = make([]byte, 8)
-		err := bluesky.WriteUint32(testBuf, 0x04030201)
+		err := WriteUint32(testBuf, 0x04030201)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -84,7 +83,7 @@ func TestWrite(t *testing.T) {
 
 	t.Run("write uint48", func(t *testing.T) {
 		testBuf = make([]byte, 8)
-		err := bluesky.WriteUint48(testBuf, 0x060504030201)
+		err := WriteUint48(testBuf, 0x060504030201)
 		if err != nil {
 			t.Error(err.Error())
 		}
@@ -94,7 +93,7 @@ func TestWrite(t *testing.T) {
 
 	t.Run("write uint64", func(t *testing.T) {
 		testBuf = make([]byte, 8)
-		err := bluesky.WriteUint64(testBuf, 0x0807060504030201)
+		err := WriteUint64(testBuf, 0x0807060504030201)
 		if err != nil {
 			t.Error(err.Error())
 		}
