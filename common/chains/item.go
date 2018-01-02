@@ -17,4 +17,3 @@ func (c *BaseItem) GetName() string{
 func (c *BaseItem) Do(data interface{}) (error,interface{}){
 	return nil,data
 }
-
