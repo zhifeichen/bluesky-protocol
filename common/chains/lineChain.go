@@ -160,7 +160,6 @@ func (c *LineChain)doMsg(items []IItem, msg *ChainMsg) error {
 		if msg.Track && msg.Tracks{
 
 		}
-
 		if !err {
 
 		} else {
