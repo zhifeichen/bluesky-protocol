@@ -1,7 +1,6 @@
 package bluesky
 
 import (
-	"errors"
 	"encoding/binary"
 	"bytes"
 	"unsafe"
@@ -30,8 +29,8 @@ type Common struct {
 	Crc       uint8
 }
 
-func Len(c *Common) int {
-	return 30 + len(c.data)
+func (c *Common)Len() int {
+	return int(unsafe.Sizeof(c.Header)) + len(c.data) + 3
 }
 
 func (c *Common) Unmarshal(data []byte) error {
@@ -101,65 +100,71 @@ func (c *Common) Unmarshal(data []byte) error {
 }
 
 func (c *Common) Marshal() ([]byte, error) {
-	size := Len(c)
-	buf := make([]byte, size)
-	var i int
-	if int(c.DataLen) != len(c.data) {
-		return []byte{}, errors.New("invalid Common data")
-	}
-	buf[i] = 0x40
-	i++
-	buf[i] = 0x40
-	i++
-	err := WriteUint16(buf[i:], c.SerailNo)
-	if err != nil {
-		return []byte{}, err
-	}
-	i += 2
-	buf[i] = c.MainVer
-	i++
-	buf[i] = c.ClientVer
-	i++
-	buf[i] = c.Second
-	i++
-	buf[i] = c.Minute
-	i++
-	buf[i] = c.Hour
-	i++
-	buf[i] = c.Day
-	i++
-	buf[i] = c.Month
-	i++
-	buf[i] = c.Year
-	i++
-	//err = WriteUint48(buf[i:], c.Src)
+	//size := c.Len()
+	//buf := make([]byte, size)
+	//var i int
+	//if int(c.DataLen) != len(c.data) {
+	//	return []byte{}, errors.New("invalid Common data")
+	//}
+	//buf[i] = 0x40
+	//i++
+	//buf[i] = 0x40
+	//i++
+	//err := WriteUint16(buf[i:], c.SerailNo)
 	//if err != nil {
 	//	return []byte{}, err
 	//}
-	copy(buf[i:],c.Src[:])
-	i += 6
-	//err = WriteUint48(buf[i:], c.Dst)
+	//i += 2
+	//buf[i] = c.MainVer
+	//i++
+	//buf[i] = c.ClientVer
+	//i++
+	//buf[i] = c.Second
+	//i++
+	//buf[i] = c.Minute
+	//i++
+	//buf[i] = c.Hour
+	//i++
+	//buf[i] = c.Day
+	//i++
+	//buf[i] = c.Month
+	//i++
+	//buf[i] = c.Year
+	//i++
+	////err = WriteUint48(buf[i:], c.Src)
+	////if err != nil {
+	////	return []byte{}, err
+	////}
+	//copy(buf[i:],c.Src[:])
+	//i += 6
+	////err = WriteUint48(buf[i:], c.Dst)
+	////if err != nil {
+	////	return []byte{}, err
+	////}
+	//copy(buf[i:],c.Dst[:])
+	//i += 6
+	//err = WriteUint16(buf[i:], c.DataLen)
 	//if err != nil {
 	//	return []byte{}, err
 	//}
-	copy(buf[i:],c.Dst[:])
-	i += 6
-	err = WriteUint16(buf[i:], c.DataLen)
-	if err != nil {
-		return []byte{}, err
-	}
-	i += 2
-	buf[i] = c.Cmd
-	i++
-	if c.DataLen > 0 {
-		copy(buf[i:], c.data)
-		i += int(c.DataLen)
-	}
-	buf[i] = c.Crc
-	i++
-	buf[i] = 0x23
-	i++
-	buf[i] = 0x23
-	SetCRC(buf)
-	return buf, nil
+	//i += 2
+	//buf[i] = c.Cmd
+	//i++
+	//if c.DataLen > 0 {
+	//	copy(buf[i:], c.data)
+	//	i += int(c.DataLen)
+	//}
+	//buf[i] = c.Crc
+	//i++
+	//buf[i] = 0x23
+	//i++
+	//buf[i] = 0x23
+	//SetCRC(buf)
+
+	var buffer bytes.Buffer
+	binary.Write(&buffer, binary.LittleEndian, c.Header)
+	binary.Write(&buffer,binary.LittleEndian,c.data)
+	binary.Write(&buffer,binary.LittleEndian,GenCrc(buffer.Bytes()[2:]))
+	binary.Write(&buffer,binary.LittleEndian,[]byte{0x23,0x23})
+	return buffer.Bytes(), nil
 }

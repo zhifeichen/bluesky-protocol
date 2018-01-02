@@ -73,6 +73,14 @@ func SetCRC(msg []byte) {
 	msg[msgLen - 3] = sum
 }
 
+func GenCrc(msg []byte) byte{
+	var sum byte
+	for _,v := range msg{
+		sum+=v
+	}
+	return sum
+}
+
 func readUintN(data []byte, cap int) (interface{}, error) {
 	if len(data) < cap {
 		return 0, errors.New("out of range")
