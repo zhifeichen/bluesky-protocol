@@ -135,10 +135,11 @@ func (c *Common) Marshal() ([]byte, error) {
 		copy(buf[i:], c.data)
 		i += int(c.dataLen)
 	}
-	buf[i] = c.crc
+	buf[i] = 0
 	i++
 	buf[i] = 0x23
 	i++
 	buf[i] = 0x23
+	SetCRC(buf)
 	return buf, nil
 }

@@ -62,6 +62,15 @@ func CheckCRC(msg []byte) bool {
 	return sum == msg[msgLen - 3]
 }
 
+func SetCRC(msg []byte) {
+	var sum byte
+	msgLen := len(msg)
+	for i := 2; i < msgLen - 3; i++ {
+		sum += msg[i]
+	}
+	msg[msgLen - 3] = sum
+}
+
 func readUintN(data []byte, cap int) (interface{}, error) {
 	if len(data) < cap {
 		return 0, errors.New("out of range")
