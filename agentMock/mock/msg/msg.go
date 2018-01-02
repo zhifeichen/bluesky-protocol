@@ -66,7 +66,7 @@ func open() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Printf("%s: %v\n", line, binMsg)
+		fmt.Printf("%s: %v: %v\n",line, []byte(line), binMsg)
 		sender.Send(binMsg)
 		time.Sleep(time.Duration(config.Config().Interval) * time.Second)
 	}
