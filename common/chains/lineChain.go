@@ -5,8 +5,8 @@ package chains
  */
 import (
 	"strings"
-	"bluesky-protocol/common/logger"
-	"bluesky-protocol/common/utils"
+	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/utils"
 	"sync"
 	"fmt"
 	"time"

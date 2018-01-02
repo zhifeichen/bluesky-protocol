@@ -4,9 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"bluesky-protocol/agent/cfg"
-	"bluesky-protocol/common/logger"
-	"bluesky-protocol/agent/receiver"
+	"github.com/zhifeichen/bluesky-protocol/agent/cfg"
+	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/agent/receiver"
 )
 
 func main(){

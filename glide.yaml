@@ -1,6 +1,4 @@
 package: bluesky-protocol
-ignore:
-- bluesky-protocol
 import:
 - package: gopkg.in/natefinch/lumberjack.v2
   version: ^2.1.0

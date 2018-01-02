@@ -5,8 +5,8 @@ import (
 	"sync"
 	"encoding/json"
 	"os"
-	"bluesky-protocol/common/utils"
-	"bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/utils"
+	"github.com/zhifeichen/bluesky-protocol/common/logger"
 )
 
 var (

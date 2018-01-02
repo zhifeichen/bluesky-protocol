@@ -8,8 +8,8 @@ import (
 	"strconv"
 	//"strings"
 	"time"
-	sender "bluesky-protocol/agentMock/mock/sender"
-	"bluesky-protocol/agentMock/mock/config"
+	sender "github.com/zhifeichen/bluesky-protocol/agentMock/mock/sender"
+	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
 	"encoding/hex"
 	"strings"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"bluesky-protocol/agentMock/mock/config"
+	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
 )
 
 func Send(msg []byte) error {

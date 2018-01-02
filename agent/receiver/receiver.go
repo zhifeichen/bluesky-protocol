@@ -3,9 +3,9 @@ package receiver
 import (
 	"net"
 	"fmt"
-	"bluesky-protocol/agent/protocol/bluesky"
-	"bluesky-protocol/common/logger"
-	config "bluesky-protocol/agent/cfg"
+	"github.com/zhifeichen/bluesky-protocol/agent/protocol/bluesky"
+	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	config "github.com/zhifeichen/bluesky-protocol/agent/cfg"
 )
 
 // Start start receive
