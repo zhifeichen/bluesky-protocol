@@ -160,5 +160,6 @@ func (c *Common) Marshal() ([]byte, error) {
 	buf[i] = 0x23
 	i++
 	buf[i] = 0x23
+	SetCRC(buf)
 	return buf, nil
 }

@@ -34,17 +34,20 @@ func Start() {
 			continue
 		}
 		fmt.Printf("client[%s] connected\n", conn.RemoteAddr().String())
-		msgChan := make(chan []byte, 1)
-		go bluesky.Get(conn, msgChan)
-		i := 0
-		for {
-			msg := <- msgChan
-			if len(msg) == 0 {
-				//fmt.Println("msg is eof")
-				break
+		go func(conn net.Conn) {
+			msgChan := make(chan []byte, 1)
+			go bluesky.Get(conn, msgChan)
+			i := 0
+			for {
+				msg := <- msgChan
+				if len(msg) == 0 {
+					//fmt.Println("msg is eof")
+					break
+				}
+				fmt.Printf("receiced[%d]: %v; message is %v\n", i, msg, bluesky.CheckCRC(msg))
+				i++
 			}
-			fmt.Printf("receiced[%d]: %v; message is %v\n", i, msg, bluesky.CheckCRC(msg))
-			i++
-		}
+			conn.Close()
+		}(conn)
 	}
 }
