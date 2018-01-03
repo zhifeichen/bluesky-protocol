@@ -15,7 +15,7 @@ var (
 )
 
 func equal(a, b Common) bool {
-	return bytes.Equal(a.data, b.data) && a.SerailNo == b.SerailNo &&
+	return bytes.Equal(a.Data, b.Data) && a.SerailNo == b.SerailNo &&
 		a.MainVer == b.MainVer && a.ClientVer == b.ClientVer &&
 		a.Second == b.Second && a.Minute == b.Minute &&
 		a.Hour == b.Hour && a.Day == b.Day &&
