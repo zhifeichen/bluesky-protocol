@@ -35,13 +35,14 @@ type ChainCtx struct {
 	done     chan struct{}
 	err      error
 
-	Seqno    int64             // 序号
-	T        chainMsgType      // 消息类型,main type
-	Data     interface{}       // data
-	Sync     bool              // 是否等待消息执行结果返回
-	AckData  interface{}
-	Track    bool         // 是否追踪消息
-	Traces   []ChainTrace // 追踪结果
+	seqno   int64        // 序号
+	t       chainMsgType // 消息类型,main type
+	data    interface{}  // data
+	ackData interface{}
+
+	sync    bool         // 是否等待消息执行结果返回
+	track   bool         // 是否追踪消息
+	traces  []ChainTrace // 追踪结果
 
 }
 
@@ -63,7 +64,7 @@ func (c *ChainCtx) Err() error {
 
 func (c *ChainCtx) Close(ack interface{},err error){
 	c.mu.Lock()
-	c.AckData = ack
+	c.ackData = ack
 	c.err = err
 	if c.done == nil {
 		c.done = make(chan struct{})
@@ -75,11 +76,11 @@ func (c *ChainCtx) Close(ack interface{},err error){
 
 func NewContext(t chainMsgType, d interface{}, sync bool, track bool) *ChainCtx {
 	msg := &ChainCtx{
-		Seqno: time.Now().Unix(),
-		T: t,
-		Data: d,
-		Sync:sync,
-		Track:track,
+		seqno: time.Now().Unix(),
+		t:     t,
+		data:  d,
+		sync:  sync,
+		track: track,
 	}
 	return msg
 }
@@ -91,19 +92,19 @@ func NewAddItemContext(d interface{}, sync bool) *ChainCtx {
 func (c *ChainCtx)String() string {
 	return fmt.Sprintf(
 		"{seqno:%d, t:%v, sync:%v,track:%v traces:%v}",
-		c.Seqno,
-		c.T,
-		c.Sync,
-		c.Track,
-		c.Traces,
+		c.seqno,
+		c.t,
+		c.sync,
+		c.track,
+		c.traces,
 	)
 }
 func (c *ChainCtx)SimpleString() string {
 	return fmt.Sprintf(
 		"{seqno:%d, t:%v, sync:%v,track:%v}",
-		c.Seqno,
-		c.T,
-		c.Sync,
-		c.Track,
+		c.seqno,
+		c.t,
+		c.sync,
+		c.track,
 	)
 }

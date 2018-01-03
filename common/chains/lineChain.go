@@ -87,14 +87,14 @@ func (c *LineChain) Stop() error{
 
 func (c *LineChain) addHandleCtx(ctx *ChainCtx) (error, interface{},[]ChainTrace) {
 	c.ctxes <- ctx
-	if ctx.Sync{
+	if ctx.sync {
 		done := ctx.Done()
 		<- done
 		if err := ctx.Err(); err != nil{
 			logger.Error("处理消息:", ctx.String()," 失败:",err)
 			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil,nil
 		} else {
-			return nil, ctx.AckData, ctx.Traces
+			return nil, ctx.ackData, ctx.traces
 		}
 	} else {
 		return nil, nil, nil
@@ -105,7 +105,7 @@ func (c *LineChain)run() {
 	for {
 		select {
 		case ctx := <-c.ctxes:
-			switch ctx.T {
+			switch ctx.t {
 
 			// 增加item
 			case CHAIN_ADD_ITEM:
@@ -135,9 +135,9 @@ func (c *LineChain)run() {
 func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
 	t := make([]IItem, len(c.items))
 	copy(t, c.items)
-	t = append(t, ctx.Data.(IItem))
+	t = append(t, ctx.data.(IItem))
 	c.items = t
-	if ctx.Sync {
+	if ctx.sync {
 		ctx.Close(nil,nil)
 	}
 	return nil
@@ -149,7 +149,7 @@ func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
 func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
 	logger.Info("处理线性chain:", c.Seqno, "指令:", ctx.String())
 	stop = false
-	switch ctx.T {
+	switch ctx.t {
 	case CHAIN_PAUSE:
 	//TODO pause!!
 	case CHAIN_STOP:
@@ -158,7 +158,7 @@ func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
 		logger.Error("处理线性chain:", c.Seqno, "未知指令:", ctx.String())
 	}
 
-	if ctx.Sync {
+	if ctx.sync {
 		ctx.Close(nil,nil)
 	}
 
@@ -178,32 +178,32 @@ func (c *LineChain) handleCtx(ctx *ChainCtx) error {
 func (c *LineChain) doCtx(items []IItem, ctx *ChainCtx) error {
 	for i, item := range items {
 		var st int64 = 0
-		if ctx.Track {
+		if ctx.track {
 			st = time.Now().UnixNano() / 1000
 		}
 
-		err, d := item.Do(ctx.Data)
-		if ctx.Track{
+		err, d := item.Do(ctx.data)
+		if ctx.track {
 			trace := ChainTrace{
 				i,
 				st,
 				time.Now().UnixNano() / 1000 - st,
 				err,
 			}
-			ctx.Traces = append(ctx.Traces, trace)
+			ctx.traces = append(ctx.traces, trace)
 		}
 		if err != nil {
 			logger.Error(ctx.String(), " error:", err)
-			if ctx.Sync{
+			if ctx.sync {
 				ctx.Close(nil,err)
 			}
 			return err
 		} else {
-			ctx.Data = d
+			ctx.data = d
 		}
 	}
-	if ctx.Sync{
-		ctx.Close(ctx.Data,nil)
+	if ctx.sync {
+		ctx.Close(ctx.data,nil)
 	}
 
 	return nil
