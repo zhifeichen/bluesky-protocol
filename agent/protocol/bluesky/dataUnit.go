@@ -6,9 +6,12 @@ import (
 	"fmt"
 )
 
-type DataUnit24 struct {
-	ID     byte // 24
-	Count  byte
+type DataUnitHeader struct {
+	ID byte
+	Count byte
+}
+
+type DataUnit24Body struct {
 	Body   byte
 	UserID byte
 	Second uint8
@@ -19,6 +22,12 @@ type DataUnit24 struct {
 	Year   uint8
 }
 
+type DataUnit24 struct {
+	Header	DataUnitHeader
+	Body	 []DataUnit24Body
+}
+
+// TODO: modify unmarshal
 func (d *DataUnit24) Unmarshal(data []byte) error {
 	err := binary.Read(bytes.NewBuffer(data), binary.LittleEndian, d)
 	return err
