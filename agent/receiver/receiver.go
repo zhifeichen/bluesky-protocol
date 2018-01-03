@@ -46,6 +46,14 @@ func Start() {
 				}
 				fmt.Printf("receiced[%d]: %v; message is %v\n", i, msg, bluesky.CheckCRC(msg))
 				i++
+				msgComm := bluesky.Common{}
+				err := msgComm.Unmarshal(msg)
+				if err != nil {
+					continue
+				}
+				if msgComm.DataLen > 0 {
+					bluesky.HandleRawData(msgComm.Data)
+				}
 			}
 			conn.Close()
 		}(conn)

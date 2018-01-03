@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
 	"flag"
 	"fmt"
 	"os"
@@ -38,6 +39,7 @@ func main(){
 
 	logger.Info.Println("启动服务ip:",cfg.Config().Ip," port:",cfg.Config().Port," ... [ok]")
 
+	bluesky.RegisterAll()
 	go receiver.Start()
 
 	// TODO 接收信号?
