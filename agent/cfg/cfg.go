@@ -22,6 +22,7 @@ type GlobalConfig struct {
 	Port     int               `json:"port"`
 	Uuid     string            `json:"uuid"`
 	LogFile  string            `json:"logFile"`
+	UDPAddr  string						 `json:"udpAddr"`
 }
 
 func Config() *GlobalConfig {
