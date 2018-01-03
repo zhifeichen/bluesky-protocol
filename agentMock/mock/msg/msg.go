@@ -39,6 +39,7 @@ func open() {
 		}
 		fmt.Printf("%s: %v\n",line, binMsg)
 		sender.Send(binMsg)
+		sender.UDPSend(binMsg)
 		time.Sleep(time.Duration(config.Config().Interval) * time.Second)
 	}
 }
