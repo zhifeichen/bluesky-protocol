@@ -45,6 +45,7 @@ func main(){
 
 	bluesky.RegisterAll()
 	go receiver.Start()
+	go receiver.UdpStart()
 
 	// TODO 接收信号?
 	select {}

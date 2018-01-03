@@ -51,9 +51,7 @@ func Start() {
 				if err != nil {
 					continue
 				}
-				if msgComm.DataLen > 0 {
-					bluesky.HandleRawData(msgComm.Data)
-				}
+				bluesky.HandleMessage(&msgComm)
 			}
 			conn.Close()
 		}(conn)
