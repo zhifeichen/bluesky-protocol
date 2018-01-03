@@ -66,6 +66,16 @@ func (c *ChainMsg)String() string {
 		c.Traces,
 	)
 }
+func (c *ChainMsg)SimpleString() string {
+	return fmt.Sprintf(
+		"{seqno:%d, t:%v, sync:%v,track:%v}",
+		c.Seqno,
+		c.T,
+		c.Sync,
+		c.Track,
+	)
+}
+
 
 type ChainMsgACK struct {
 	Seqno int64        // 序号

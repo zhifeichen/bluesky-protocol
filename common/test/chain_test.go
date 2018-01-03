@@ -82,5 +82,8 @@ func TestChain(t *testing.T) {
 			fmt.Println("处理数据:\"",data,"\" 结果:\"", totalWord,"\" tracks:",traces)
 		}
 
+
+		lineChain.Stop()
+
 	})
 }

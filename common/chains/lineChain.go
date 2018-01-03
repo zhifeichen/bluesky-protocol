@@ -13,10 +13,10 @@ import (
 )
 
 type LineChain struct {
-	Seqno string
-	name  string
-	items []IItem
-	msgs  chan *ChainMsg
+	Seqno string				// 序列号
+	name  string				// 处理链名称
+	items []IItem				// tasks
+	msgs  chan *ChainMsg		// 消息队列
 	once  *sync.Once
 }
 
@@ -29,7 +29,6 @@ func NewLineChains(name string) *LineChain {
 		&sync.Once{},
 	}
 }
-
 
 /**
 	打印整个任务链
@@ -63,21 +62,6 @@ func (c *LineChain)HandleData(data interface{},sync,trace bool) (error,interface
 	return err,d, traces
 }
 
-func (c *LineChain) addHandleMsg(msg *ChainMsg) (error, interface{},[]ChainMsgTrace) {
-	c.msgs <- msg
-	if msg.Sync && msg.syncChan != nil {
-		if msgAck, ok := <-msg.syncChan; !ok {
-			logger.Info.Println("处理消息:", msg.String()," 失败")
-			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil,nil
-		} else {
-			logger.Info.Println("处理消息: seqno:", msg.Seqno," 成功 ",msgAck)
-			return nil, msgAck.Data,msg.Traces
-		}
-
-	} else {
-		return nil, nil, nil
-	}
-}
 
 /**
 	启动chain
@@ -88,6 +72,33 @@ func (c *LineChain) Run() {
 		go c.run()
 	})
 
+}
+
+func (c *LineChain) Stop() error{
+	msg := NewMsg(CHAIN_STOP, nil, true, false)
+	err, _ ,_:= c.addHandleMsg(msg)
+	return err
+}
+
+/**
+	-------------  以下为私有方法  ---------------
+ */
+
+
+func (c *LineChain) addHandleMsg(msg *ChainMsg) (error, interface{},[]ChainMsgTrace) {
+	c.msgs <- msg
+	if msg.Sync && msg.syncChan != nil {
+		if msgAck, ok := <-msg.syncChan; !ok {
+			logger.Error.Println("处理消息:", msg.String()," 失败")
+			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil,nil
+		} else {
+			logger.Info.Println("处理消息: ", msg.SimpleString()," 成功 ",msgAck)
+			return nil, msgAck.Data,msg.Traces
+		}
+
+	} else {
+		return nil, nil, nil
+	}
 }
 
 func (c *LineChain)run() {
@@ -112,7 +123,7 @@ func (c *LineChain)run() {
 	}
 
 	OUT_LOOP:
-	logger.Warning.Println("退出循环chain:", c.name)
+	logger.Warning.Println("退出 chain:", c.name)
 	c.once = &sync.Once{}
 }
 
