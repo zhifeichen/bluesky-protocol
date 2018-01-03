@@ -13,10 +13,10 @@ import (
 )
 
 type LineChain struct {
-	Seqno string				// 序列号
-	name  string				// 处理链名称
-	items []IItem				// tasks
-	msgs  chan *ChainMsg		// 消息队列
+	Seqno string         // 序列号
+	name  string         // 处理链名称
+	items []IItem        // tasks
+	ctxes chan *ChainCtx // 消息队列
 	once  *sync.Once
 }
 
@@ -25,7 +25,7 @@ func NewLineChains(name string) *LineChain {
 		fmt.Sprintf("lc_%d", time.Now().Unix()),
 		name,
 		make([]IItem, 0),
-		make(chan *ChainMsg),
+		make(chan *ChainCtx),
 		&sync.Once{},
 	}
 }
@@ -46,18 +46,18 @@ func (c *LineChain) String() string {
 	TODO 增加多个任务?
  */
 func (c *LineChain)AddItems(item  IItem) error {
-	msg := NewAddItemMsg(item, false)
+	msg := NewAddItemContext(item, false)
 	err, _, _ := c.addHandleMsg(msg)
 	return err
 }
 func (c *LineChain)AddSyncItem(item IItem) error {
-	msg := NewAddItemMsg(item, true)
+	msg := NewAddItemContext(item, true)
 	err, _, _ := c.addHandleMsg(msg)
 	return err
 }
 
-func (c *LineChain)HandleData(data interface{},sync,trace bool) (error,interface{},[]ChainMsgTrace){
-	msg := NewMsg(CHAIN_HANDLE_DATA, data, sync, trace)
+func (c *LineChain)HandleData(data interface{},sync,trace bool) (error,interface{},[]ChainTrace){
+	msg := NewContext(CHAIN_HANDLE_DATA, data, sync, trace)
 	err, d ,traces:= c.addHandleMsg(msg)
 	return err,d, traces
 }
@@ -75,7 +75,7 @@ func (c *LineChain) Run() {
 }
 
 func (c *LineChain) Stop() error{
-	msg := NewMsg(CHAIN_STOP, nil, true, false)
+	msg := NewContext(CHAIN_STOP, nil, true, false)
 	err, _ ,_:= c.addHandleMsg(msg)
 	return err
 }
@@ -85,17 +85,17 @@ func (c *LineChain) Stop() error{
  */
 
 
-func (c *LineChain) addHandleMsg(msg *ChainMsg) (error, interface{},[]ChainMsgTrace) {
-	c.msgs <- msg
-	if msg.Sync && msg.syncChan != nil {
-		if msgAck, ok := <-msg.syncChan; !ok {
-			logger.Error("处理消息:", msg.String()," 失败")
+func (c *LineChain) addHandleMsg(ctx *ChainCtx) (error, interface{},[]ChainTrace) {
+	c.ctxes <- ctx
+	if ctx.Sync{
+		done := ctx.Done()
+		<- done
+		if err := ctx.Err(); err != nil{
+			logger.Error("处理消息:", ctx.String()," 失败:",err)
 			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil,nil
 		} else {
-			logger.Info("处理消息: ", msg.SimpleString()," 成功 ",msgAck)
-			return nil, msgAck.Data,msg.Traces
+			return nil, ctx.AckData, ctx.Traces
 		}
-
 	} else {
 		return nil, nil, nil
 	}
@@ -104,18 +104,18 @@ func (c *LineChain) addHandleMsg(msg *ChainMsg) (error, interface{},[]ChainMsgTr
 func (c *LineChain)run() {
 	for {
 		select {
-		case msg := <-c.msgs:
-			switch msg.T {
+		case ctx := <-c.ctxes:
+			switch ctx.T {
 
 			// 增加item
 			case CHAIN_ADD_ITEM:
-				c.handleAddItemMsg(msg)
+				c.handleAddItemMsg(ctx)
 
 			case CHAIN_HANDLE_DATA:
-				c.handleMsg(msg)
+				c.handleMsg(ctx)
 
 			default:
-				if _, stop := c.handleCtlMsg(msg); stop {
+				if _, stop := c.handleCtlMsg(ctx); stop {
 					goto OUT_LOOP
 				}
 			}
@@ -132,13 +132,13 @@ func (c *LineChain)run() {
 	增加任务链
 	拷贝任务链并新增任务, 避免任务链执行过程中变化的问题
  */
-func (c *LineChain)handleAddItemMsg(msg *ChainMsg) error {
+func (c *LineChain)handleAddItemMsg(ctx *ChainCtx) error {
 	t := make([]IItem, len(c.items))
 	copy(t, c.items)
-	t = append(t, msg.Data.(IItem))
+	t = append(t, ctx.Data.(IItem))
 	c.items = t
-	if msg.Sync && msg.syncChan != nil {
-		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, nil)
+	if ctx.Sync {
+		ctx.Close(nil,nil)
 	}
 	return nil
 }
@@ -146,20 +146,20 @@ func (c *LineChain)handleAddItemMsg(msg *ChainMsg) error {
 /**
 	处理停止启动等控制消息
  */
-func (c *LineChain)handleCtlMsg(msg *ChainMsg) (err error, stop bool) {
-	logger.Info("处理线性chain:", c.Seqno, "指令:", msg.String())
+func (c *LineChain)handleCtlMsg(ctx *ChainCtx) (err error, stop bool) {
+	logger.Info("处理线性chain:", c.Seqno, "指令:", ctx.String())
 	stop = false
-	switch msg.T {
+	switch ctx.T {
 	case CHAIN_PAUSE:
 	//TODO pause!!
 	case CHAIN_STOP:
 		stop = true
 	default:
-		logger.Error("处理线性chain:", c.Seqno, "未知指令:", msg.String())
+		logger.Error("处理线性chain:", c.Seqno, "未知指令:", ctx.String())
 	}
 
-	if msg.Sync {
-		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, nil)
+	if ctx.Sync {
+		ctx.Close(nil,nil)
 	}
 
 	return err, stop
@@ -168,42 +168,42 @@ func (c *LineChain)handleCtlMsg(msg *ChainMsg) (err error, stop bool) {
 /**
 	处理普通消息
  */
-func (c *LineChain)handleMsg(msg *ChainMsg) error {
+func (c *LineChain)handleMsg(msg *ChainCtx) error {
 	go c.doMsg(c.items, msg)
 	return nil
 }
 /**
 	处理普通消息
  */
-func (c *LineChain)doMsg(items []IItem, msg *ChainMsg) error {
+func (c *LineChain)doMsg(items []IItem, ctx *ChainCtx) error {
 	for i, item := range items {
 		var st int64 = 0
-		if msg.Track {
+		if ctx.Track {
 			st = time.Now().UnixNano() / 1000
 		}
 
-		err, d := item.Do(msg.Data)
-		if msg.Track{
-			trace := ChainMsgTrace{
+		err, d := item.Do(ctx.Data)
+		if ctx.Track{
+			trace := ChainTrace{
 				i,
 				st,
 				time.Now().UnixNano() / 1000 - st,
 				err,
 			}
-			msg.Traces = append(msg.Traces, trace)
+			ctx.Traces = append(ctx.Traces, trace)
 		}
 		if err != nil {
-			logger.Error(msg.String(), " error:", err)
-			if msg.Sync && msg.syncChan != nil {
-				msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, err)
+			logger.Error(ctx.String(), " error:", err)
+			if ctx.Sync{
+				ctx.Close(nil,err)
 			}
 			return err
 		} else {
-			msg.Data = d
+			ctx.Data = d
 		}
 	}
-	if msg.Sync && msg.syncChan != nil {
-		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, msg.Data, nil)
+	if ctx.Sync{
+		ctx.Close(ctx.Data,nil)
 	}
 
 	return nil

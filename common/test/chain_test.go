@@ -64,7 +64,12 @@ func TestChain(t *testing.T) {
 			t.Fail()
 		} else {
 			fmt.Println("处理数据:\"",data,"\" 结果:\"", totalWord,"\"")
+			if totalWord != "i say: what a nice day!"{
+				t.Fatal( fmt.Sprintf("%v != %v", totalWord, "i say: what a nice day!"))
+			}
 		}
+
+
 
 		fmt.Println("")
 
@@ -80,6 +85,9 @@ func TestChain(t *testing.T) {
 			t.Fail()
 		} else {
 			fmt.Println("处理数据:\"",data,"\" 结果:\"", totalWord,"\" tracks:",traces)
+			if totalWord != "i say: what a nice day! isn't it?"{
+				t.Fatal( fmt.Sprintf("%v != %v", totalWord, "i say: what a nice day! isn't it?"))
+			}
 		}
 
 
