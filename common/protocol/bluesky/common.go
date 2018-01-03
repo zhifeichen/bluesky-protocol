@@ -25,12 +25,12 @@ type Header struct{
 
 type Common struct {
 	Header
-	data      []byte
+	Data      []byte
 	Crc       uint8
 }
 
 func (c *Common)Len() int {
-	return int(unsafe.Sizeof(c.Header)) + len(c.data) + 3
+	return int(unsafe.Sizeof(c.Header)) + len(c.Data) + 3
 }
 
 func (c *Common) Unmarshal(data []byte) error {
@@ -91,9 +91,9 @@ func (c *Common) Unmarshal(data []byte) error {
 	st:=int(unsafe.Sizeof(c.Header))-1
 	len:= st +int(c.DataLen)
 	if c.DataLen > 0{
-		c.data = make([]byte, c.DataLen)
+		c.Data = make([]byte, c.DataLen)
 
-		copy(c.data, data[st: len])
+		copy(c.Data, data[st: len])
 	}
 	c.Crc = data[len]
 	return nil
@@ -163,7 +163,7 @@ func (c *Common) Marshal() ([]byte, error) {
 
 	var buffer bytes.Buffer
 	binary.Write(&buffer, binary.LittleEndian, c.Header)
-	binary.Write(&buffer,binary.LittleEndian,c.data)
+	binary.Write(&buffer,binary.LittleEndian,c.Data)
 	binary.Write(&buffer,binary.LittleEndian,GenCrc(buffer.Bytes()[2:]))
 	binary.Write(&buffer,binary.LittleEndian,[]byte{0x23,0x23})
 	return buffer.Bytes(), nil

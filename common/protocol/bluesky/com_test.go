@@ -42,7 +42,7 @@ func TestDecode(t *testing.T){
 
 func TestType(t *testing.T) {
 	RegisterAll()
-	err := HandleRawData(24, []byte{24, 1, 1, 0, 0, 59, 12, 27, 12, 17})
+	err := HandleRawData([]byte{24, 1, 1, 0, 0, 59, 12, 27, 12, 17})
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,5 +50,9 @@ func TestType(t *testing.T) {
 	err = d.Unmarshal([]byte{24, 1, 1, 0, 0, 59, 12, 27, 12, 17})
 	if err != nil {
 		t.Error(d)
+	}
+	r, err := d.Marshal()
+	if !bytes.Equal(r, []byte{24, 1, 1, 0, 0, 59, 12, 27, 12, 17}) {
+		t.Error(r)
 	}
 }

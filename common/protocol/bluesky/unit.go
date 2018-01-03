@@ -37,7 +37,7 @@ func RegisterUnitHandler(dataTypeId byte, inter interface{}, handler DataUnitHan
 	unitMap[dataTypeId] = unit
 }
 
-func HandleRawData(dataTypeId byte, data []byte) error {
+func handleRawData(dataTypeId byte, data []byte) error {
 	if unit, ok := unitMap[dataTypeId]; ok {
 		msg := reflect.New(unit.dataType).Interface().(DataUnitInterface)
 		err := msg.Unmarshal(data)
@@ -48,4 +48,8 @@ func HandleRawData(dataTypeId byte, data []byte) error {
 		return err
 	}
 	return errors.New("not found dataTypeId")
+}
+
+func HandleRawData(data []byte) error {
+	return handleRawData(data[0], data)
 }
