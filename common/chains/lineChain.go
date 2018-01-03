@@ -39,7 +39,7 @@ func (c *LineChain) String() string {
 	for _, v := range c.items {
 		names = append(names, v.GetName())
 	}
-	return fmt.Sprintf(" 线性处理链: ", c.name, " task:", strings.Join(names, " -> "))
+	return fmt.Sprintf(" 线性处理链{name:%s,tasks:[%s]}", c.name, strings.Join(names, " -> "))
 }
 
 /**
@@ -118,7 +118,7 @@ func (c *LineChain)handleAddItemMsg(msg *ChainMsg) error {
 	copy(t, c.items)
 	c.items = t
 	if msg.Sync && msg.syncChan != nil {
-		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil)
+		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, nil)
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func (c *LineChain)handleCtlMsg(msg *ChainMsg) (err error, stop bool) {
 	}
 
 	if msg.Sync {
-		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil)
+		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, nil)
 	}
 
 	return err, stop
@@ -156,15 +156,34 @@ func (c *LineChain)handleMsg(msg *ChainMsg) error {
 func (c *LineChain)doMsg(items []IItem, msg *ChainMsg) error {
 	// TODO 处理普通消息
 	for i, item := range items {
-		err, d := item.Do(msg.Data)
-		if msg.Track && msg.Tracks{
-
+		var st int64 = 0
+		if msg.Track {
+			st = time.Now().UnixNano() / 1000
 		}
-		if !err {
 
+		err, d := item.Do(msg.Data)
+		if msg.Track && msg.Tracks != nil {
+			track := ChainMsgTrace{
+				st,
+				time.Now().UnixNano() / 1000 - st,
+				i,
+				err,
+			}
+			msg.Tracks = append(msg.Tracks, track)
+		}
+		if err != nil {
+			logger.Error.Println(msg.String(), " error:", err)
+			if msg.Sync && msg.syncChan != nil {
+				msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, err)
+			}
+			return err
 		} else {
-
+			msg.Data = d
 		}
 	}
+	if msg.Sync && msg.syncChan != nil {
+		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, msg.Data, nil)
+	}
+
 	return nil
 }
