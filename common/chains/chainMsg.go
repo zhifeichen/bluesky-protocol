@@ -8,11 +8,22 @@ import (
 	追踪消息
  */
 type ChainMsgTrace struct {
+	Step     int
 	Time     int64 // ms
 	Duration int64
-	Step     int
 	Error    error
 }
+
+func (trace *ChainMsgTrace) String() string {
+	return fmt.Sprintf(
+		"{seqno:%d, time:%v, dur:%v, error:%v}",
+		trace.Step,
+		trace.Time,
+		trace.Duration,
+		trace.Error,
+	)
+}
+
 /**
 	chain消息
  */
@@ -24,7 +35,7 @@ type ChainMsg struct {
 							   // TODO 如何更好的返回结果??
 	syncChan chan *ChainMsgACK // 接收结果消息返回channel
 	Track    bool              // 是否追踪消息
-	Tracks   []ChainMsgTrace   // 追踪结果
+	Traces   []ChainMsgTrace   // 追踪结果
 }
 
 func NewMsg(t chainMsgType, d interface{}, sync bool, track bool) *ChainMsg {
@@ -33,12 +44,10 @@ func NewMsg(t chainMsgType, d interface{}, sync bool, track bool) *ChainMsg {
 		T: t,
 		Data: d,
 		Sync:sync,
+		Track:track,
 	}
 	if sync {
 		msg.syncChan = make(chan *ChainMsgACK)
-	}
-	if track {
-		msg.Tracks = make([]ChainMsgTrace, 0)
 	}
 	return msg
 }
@@ -49,10 +58,12 @@ func NewAddItemMsg(d interface{}, sync bool) *ChainMsg {
 
 func (c *ChainMsg)String() string {
 	return fmt.Sprintf(
-		"{seqno:%d, t:%v, sync:%v}",
+		"{seqno:%d, t:%v, sync:%v,track:%v traces:%v}",
 		c.Seqno,
 		c.T,
 		c.Sync,
+		c.Track,
+		c.Traces,
 	)
 }
 

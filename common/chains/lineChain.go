@@ -39,7 +39,7 @@ func (c *LineChain) String() string {
 	for _, v := range c.items {
 		names = append(names, v.GetName())
 	}
-	return fmt.Sprintf(" 线性处理链{name:%s,tasks:[%s]}", c.name, strings.Join(names, " -> "))
+	return fmt.Sprintf(" 线性处理链{Name:%s,tasks:[%s]}", c.name, strings.Join(names, " -> "))
 }
 
 /**
@@ -48,26 +48,34 @@ func (c *LineChain) String() string {
  */
 func (c *LineChain)AddItems(item  IItem) error {
 	msg := NewAddItemMsg(item, false)
-	err, _ := c.HandleMsg(msg)
+	err, _, _ := c.addHandleMsg(msg)
 	return err
 }
 func (c *LineChain)AddSyncItem(item IItem) error {
 	msg := NewAddItemMsg(item, true)
-	err, _ := c.HandleMsg(msg)
+	err, _, _ := c.addHandleMsg(msg)
 	return err
 }
 
-func (c *LineChain)HandleMsg(msg *ChainMsg) (error, interface{}) {
+func (c *LineChain)HandleData(data interface{},sync,trace bool) (error,interface{},[]ChainMsgTrace){
+	msg := NewMsg(CHAIN_HANDLE_DATA, data, sync, trace)
+	err, d ,traces:= c.addHandleMsg(msg)
+	return err,d, traces
+}
+
+func (c *LineChain) addHandleMsg(msg *ChainMsg) (error, interface{},[]ChainMsgTrace) {
 	c.msgs <- msg
 	if msg.Sync && msg.syncChan != nil {
-		if msg, ok := <-msg.syncChan; !ok {
-			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil
+		if msgAck, ok := <-msg.syncChan; !ok {
+			logger.Info.Println("处理消息:", msg.String()," 失败")
+			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil,nil
 		} else {
-			return nil, msg.Data
+			logger.Info.Println("处理消息: seqno:", msg.Seqno," 成功 ",msgAck)
+			return nil, msgAck.Data,msg.Traces
 		}
 
 	} else {
-		return nil, nil
+		return nil, nil, nil
 	}
 }
 
@@ -116,6 +124,7 @@ func (c *LineChain)run() {
 func (c *LineChain)handleAddItemMsg(msg *ChainMsg) error {
 	t := make([]IItem, len(c.items))
 	copy(t, c.items)
+	t = append(t, msg.Data.(IItem))
 	c.items = t
 	if msg.Sync && msg.syncChan != nil {
 		msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, nil)
@@ -152,9 +161,10 @@ func (c *LineChain)handleMsg(msg *ChainMsg) error {
 	go c.doMsg(c.items, msg)
 	return nil
 }
-
+/**
+	处理普通消息
+ */
 func (c *LineChain)doMsg(items []IItem, msg *ChainMsg) error {
-	// TODO 处理普通消息
 	for i, item := range items {
 		var st int64 = 0
 		if msg.Track {
@@ -162,14 +172,14 @@ func (c *LineChain)doMsg(items []IItem, msg *ChainMsg) error {
 		}
 
 		err, d := item.Do(msg.Data)
-		if msg.Track && msg.Tracks != nil {
-			track := ChainMsgTrace{
+		if msg.Track{
+			trace := ChainMsgTrace{
+				i,
 				st,
 				time.Now().UnixNano() / 1000 - st,
-				i,
 				err,
 			}
-			msg.Tracks = append(msg.Tracks, track)
+			msg.Traces = append(msg.Traces, trace)
 		}
 		if err != nil {
 			logger.Error.Println(msg.String(), " error:", err)
