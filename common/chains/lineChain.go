@@ -46,19 +46,19 @@ func (c *LineChain) String() string {
 	TODO 增加多个任务?
  */
 func (c *LineChain)AddItems(item  IItem) error {
-	msg := NewAddItemContext(item, false)
-	err, _, _ := c.addHandleMsg(msg)
+	ctx := NewAddItemContext(item, false)
+	err, _, _ := c.addHandleCtx(ctx)
 	return err
 }
 func (c *LineChain)AddSyncItem(item IItem) error {
-	msg := NewAddItemContext(item, true)
-	err, _, _ := c.addHandleMsg(msg)
+	ctx := NewAddItemContext(item, true)
+	err, _, _ := c.addHandleCtx(ctx)
 	return err
 }
 
 func (c *LineChain)HandleData(data interface{},sync,trace bool) (error,interface{},[]ChainTrace){
-	msg := NewContext(CHAIN_HANDLE_DATA, data, sync, trace)
-	err, d ,traces:= c.addHandleMsg(msg)
+	ctx := NewContext(CHAIN_HANDLE_DATA, data, sync, trace)
+	err, d ,traces:= c.addHandleCtx(ctx)
 	return err,d, traces
 }
 
@@ -75,8 +75,8 @@ func (c *LineChain) Run() {
 }
 
 func (c *LineChain) Stop() error{
-	msg := NewContext(CHAIN_STOP, nil, true, false)
-	err, _ ,_:= c.addHandleMsg(msg)
+	ctx := NewContext(CHAIN_STOP, nil, true, false)
+	err, _ ,_:= c.addHandleCtx(ctx)
 	return err
 }
 
@@ -85,7 +85,7 @@ func (c *LineChain) Stop() error{
  */
 
 
-func (c *LineChain) addHandleMsg(ctx *ChainCtx) (error, interface{},[]ChainTrace) {
+func (c *LineChain) addHandleCtx(ctx *ChainCtx) (error, interface{},[]ChainTrace) {
 	c.ctxes <- ctx
 	if ctx.Sync{
 		done := ctx.Done()
@@ -109,13 +109,13 @@ func (c *LineChain)run() {
 
 			// 增加item
 			case CHAIN_ADD_ITEM:
-				c.handleAddItemMsg(ctx)
+				c.handleAddItemCtx(ctx)
 
 			case CHAIN_HANDLE_DATA:
-				c.handleMsg(ctx)
+				c.handleCtx(ctx)
 
 			default:
-				if _, stop := c.handleCtlMsg(ctx); stop {
+				if _, stop := c.handleCtlCtx(ctx); stop {
 					goto OUT_LOOP
 				}
 			}
@@ -132,7 +132,7 @@ func (c *LineChain)run() {
 	增加任务链
 	拷贝任务链并新增任务, 避免任务链执行过程中变化的问题
  */
-func (c *LineChain)handleAddItemMsg(ctx *ChainCtx) error {
+func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
 	t := make([]IItem, len(c.items))
 	copy(t, c.items)
 	t = append(t, ctx.Data.(IItem))
@@ -146,7 +146,7 @@ func (c *LineChain)handleAddItemMsg(ctx *ChainCtx) error {
 /**
 	处理停止启动等控制消息
  */
-func (c *LineChain)handleCtlMsg(ctx *ChainCtx) (err error, stop bool) {
+func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
 	logger.Info("处理线性chain:", c.Seqno, "指令:", ctx.String())
 	stop = false
 	switch ctx.T {
@@ -168,14 +168,14 @@ func (c *LineChain)handleCtlMsg(ctx *ChainCtx) (err error, stop bool) {
 /**
 	处理普通消息
  */
-func (c *LineChain)handleMsg(msg *ChainCtx) error {
-	go c.doMsg(c.items, msg)
+func (c *LineChain) handleCtx(ctx *ChainCtx) error {
+	go c.doCtx(c.items, ctx)
 	return nil
 }
 /**
 	处理普通消息
  */
-func (c *LineChain)doMsg(items []IItem, ctx *ChainCtx) error {
+func (c *LineChain) doCtx(items []IItem, ctx *ChainCtx) error {
 	for i, item := range items {
 		var st int64 = 0
 		if ctx.Track {

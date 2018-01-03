@@ -40,8 +40,6 @@ type ChainCtx struct {
 	Data     interface{}       // data
 	Sync     bool              // 是否等待消息执行结果返回
 	AckData  interface{}
-							   // TODO 如何更好的返回结果??
-	//syncChan chan *ChainMsgACK // 接收结果消息返回channel
 	Track    bool         // 是否追踪消息
 	Traces   []ChainTrace // 追踪结果
 
