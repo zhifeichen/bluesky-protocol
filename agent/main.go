@@ -26,7 +26,11 @@ func main(){
 
 	// 启动系统日志
 	logFilePath := cfg.Config().LogFile
-	logger.New(logFilePath, cfg.Config().Debug)
+	level := logger.INFO
+	if cfg.Config().Debug{
+		level = logger.DEBUG
+	}
+	logger.New(logFilePath,level, cfg.Config().Debug)
 	defer logger.Close()
 
 	// 初始化配置
@@ -36,7 +40,7 @@ func main(){
 
 
 
-	logger.Info.Println("启动服务ip:",cfg.Config().Ip," port:",cfg.Config().Port," ... [ok]")
+	logger.Info("启动服务ip:",cfg.Config().Ip," port:",cfg.Config().Port," ... [ok]")
 
 	go receiver.Start()
 

@@ -76,7 +76,9 @@ func (c *ChainMsg)SimpleString() string {
 	)
 }
 
-
+/**
+	ack 消息
+ */
 type ChainMsgACK struct {
 	Seqno int64        // 序号
 	T     chainMsgType // 消息类型,main type

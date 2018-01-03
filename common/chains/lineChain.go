@@ -68,7 +68,7 @@ func (c *LineChain)HandleData(data interface{},sync,trace bool) (error,interface
  */
 func (c *LineChain) Run() {
 	c.once.Do(func() {
-		logger.Info.Println("启动chain:", c.name)
+		logger.Info("启动chain:", c.name)
 		go c.run()
 	})
 
@@ -89,10 +89,10 @@ func (c *LineChain) addHandleMsg(msg *ChainMsg) (error, interface{},[]ChainMsgTr
 	c.msgs <- msg
 	if msg.Sync && msg.syncChan != nil {
 		if msgAck, ok := <-msg.syncChan; !ok {
-			logger.Error.Println("处理消息:", msg.String()," 失败")
+			logger.Error("处理消息:", msg.String()," 失败")
 			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil,nil
 		} else {
-			logger.Info.Println("处理消息: ", msg.SimpleString()," 成功 ",msgAck)
+			logger.Info("处理消息: ", msg.SimpleString()," 成功 ",msgAck)
 			return nil, msgAck.Data,msg.Traces
 		}
 
@@ -123,7 +123,7 @@ func (c *LineChain)run() {
 	}
 
 	OUT_LOOP:
-	logger.Warning.Println("退出 chain:", c.name)
+	logger.Warn("退出 chain:", c.name)
 	c.once = &sync.Once{}
 }
 
@@ -147,7 +147,7 @@ func (c *LineChain)handleAddItemMsg(msg *ChainMsg) error {
 	处理停止启动等控制消息
  */
 func (c *LineChain)handleCtlMsg(msg *ChainMsg) (err error, stop bool) {
-	logger.Info.Println("处理线性chain:", c.Seqno, "指令:", msg.String())
+	logger.Info("处理线性chain:", c.Seqno, "指令:", msg.String())
 	stop = false
 	switch msg.T {
 	case CHAIN_PAUSE:
@@ -155,7 +155,7 @@ func (c *LineChain)handleCtlMsg(msg *ChainMsg) (err error, stop bool) {
 	case CHAIN_STOP:
 		stop = true
 	default:
-		logger.Error.Println("处理线性chain:", c.Seqno, "未知指令:", msg.String())
+		logger.Error("处理线性chain:", c.Seqno, "未知指令:", msg.String())
 	}
 
 	if msg.Sync {
@@ -193,7 +193,7 @@ func (c *LineChain)doMsg(items []IItem, msg *ChainMsg) error {
 			msg.Traces = append(msg.Traces, trace)
 		}
 		if err != nil {
-			logger.Error.Println(msg.String(), " error:", err)
+			logger.Error(msg.String(), " error:", err)
 			if msg.Sync && msg.syncChan != nil {
 				msg.syncChan <- NewMsgAck(msg.Seqno, msg.T, nil, err)
 			}

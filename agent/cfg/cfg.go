@@ -42,9 +42,9 @@ func rewriteToCfg(cfgPath string, config *GlobalConfig) error {
 	data, err := json.Marshal(config)
 	if err == nil {
 		if _, err = f.Write(data); err != nil {
-			logger.Info.Println("写入配置文件失败:", err)
+			logger.Info("写入配置文件失败:", err)
 		} else {
-			logger.Info.Println("写入配置文件成功 .... [ok]")
+			logger.Info("写入配置文件成功 .... [ok]")
 		}
 
 	}
@@ -64,7 +64,7 @@ func InitConfig() (err error) {
 	if config.Uuid == "" {
 		config.Uuid = genAgentUUid()
 		if err = rewriteToCfg(cfgPath, config); err != nil {
-			logger.Error.Println("写入配置文件:", cfgPath, " 错误:", err)
+			logger.Error("写入配置文件:", cfgPath, " 错误:", err)
 		}
 	}
 	return
