@@ -3,7 +3,7 @@ package receiver
 import (
 	"net"
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/agent/protocol/bluesky"
+	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
 	"github.com/zhifeichen/bluesky-protocol/common/logger"
 	config "github.com/zhifeichen/bluesky-protocol/agent/cfg"
 )
