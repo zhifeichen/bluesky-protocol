@@ -8,9 +8,11 @@ import (
 	"github.com/zhifeichen/bluesky-protocol/agent/cfg"
 	"github.com/zhifeichen/bluesky-protocol/common/logger"
 	"github.com/zhifeichen/bluesky-protocol/agent/receiver"
+	"runtime"
 )
 
 func main(){
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	config := flag.String("c", "./agent/cfg.json", "配置文件")
 	version := flag.Bool("v", false, "显示版本")
 	if *version {
