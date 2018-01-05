@@ -1,20 +1,20 @@
 package config
 
 import (
-	"fmt"
 	"encoding/json"
-	"sync"
+	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/common/utils"
+	"sync"
 )
 
 type MockConfig struct {
 	ServerAddr string `json:"serverAddr"`
-	Interval int	`json:"interval"`
+	Interval   int    `json:"interval"`
 }
 
 var (
 	config MockConfig
-	lock = new(sync.RWMutex)
+	lock   = new(sync.RWMutex)
 )
 
 func Config() *MockConfig {

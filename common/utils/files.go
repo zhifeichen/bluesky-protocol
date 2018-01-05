@@ -1,14 +1,14 @@
 package common
 
 import (
+	"io/ioutil"
 	"os"
 	"strings"
-	"io/ioutil"
 )
 
 /**
-	判断文件是否存在
- */
+判断文件是否存在
+*/
 func IsExist(fp string) bool {
 	_, err := os.Stat(fp)
 	return err == nil || os.IsExist(err)

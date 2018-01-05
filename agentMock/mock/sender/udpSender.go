@@ -3,8 +3,8 @@ package sender
 import (
 	"errors"
 	"fmt"
-	"net"
 	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
+	"net"
 )
 
 func UDPSend(msg []byte) error {
@@ -25,7 +25,7 @@ func UDPSend(msg []byte) error {
 	defer conn.Close()
 
 	ret, err := conn.Write(msg)
-	fmt.Println("send data:",msg)
+	fmt.Println("send data:", msg)
 	if err != nil {
 		fmt.Println("write msg error: ", err)
 		return err
@@ -34,6 +34,6 @@ func UDPSend(msg []byte) error {
 		fmt.Println("ret not equ send error: ", err)
 		return errors.New("send error")
 	}
-	fmt.Println("发送数据:",msg,"| ret:",ret,"...  [ok]")
+	fmt.Println("发送数据:", msg, "| ret:", ret, "...  [ok]")
 	return nil
 }

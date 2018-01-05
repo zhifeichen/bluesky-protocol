@@ -3,8 +3,8 @@ package sender
 import (
 	"errors"
 	"fmt"
-	"net"
 	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
+	"net"
 	"time"
 )
 
@@ -25,13 +25,13 @@ func Send(msg []byte) error {
 	}
 	defer conn.Close()
 
-	split := len(msg)/2
+	split := len(msg) / 2
 
 	ret, err := conn.Write(msg[:split])
-	fmt.Println("send data:",msg[:split])
-	time.Sleep(time.Duration(200)* time.Millisecond)
-	ret1, err:= conn.Write(msg[split:])
-	fmt.Println("send data:",msg[split:])
+	fmt.Println("send data:", msg[:split])
+	time.Sleep(time.Duration(200) * time.Millisecond)
+	ret1, err := conn.Write(msg[split:])
+	fmt.Println("send data:", msg[split:])
 	ret += ret1
 	if err != nil {
 		fmt.Println("write msg error: ", err)
@@ -41,6 +41,6 @@ func Send(msg []byte) error {
 		fmt.Println("ret not equ send error: ", err)
 		return errors.New("send error!")
 	}
-	fmt.Println("发送数据:",msg,"| ret:",ret,"...  [ok]")
+	fmt.Println("发送数据:", msg, "| ret:", ret, "...  [ok]")
 	return nil
 }

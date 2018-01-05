@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	NOT_IMPLEMENT_ERROR = errors.New("方法未实现")
+
 )
 
 type BaseError struct {

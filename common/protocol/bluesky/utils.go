@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func Split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 	hasHeader := false
 	for advance = 0; advance < len(data)-1; advance++ {
@@ -46,10 +46,10 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 func Get(r io.Reader, msgChan chan []byte) {
 	scanner := bufio.NewScanner(r)
-	scanner.Split(split)
+	scanner.Split(Split)
 	for scanner.Scan() {
-		msg:= scanner.Bytes()
-		fmt.Println("scan: ",msg)
+		//msg:= scanner.Bytes()
+		//fmt.Println("scan: ",msg)
 		msgChan <- scanner.Bytes()
 	}
 	msgChan <- []byte{}

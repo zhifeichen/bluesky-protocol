@@ -5,5 +5,4 @@ type IChain interface {
 	Run() error
 	HandleMsg(msg *ChainCtx) error
 	String()
-
 }

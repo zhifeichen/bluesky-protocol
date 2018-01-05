@@ -1,11 +1,11 @@
 package receiver
 
 import (
-	"net"
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
-	"github.com/zhifeichen/bluesky-protocol/common/logger"
 	config "github.com/zhifeichen/bluesky-protocol/agent/cfg"
+	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
+	"net"
 )
 
 // Start start receive
@@ -27,10 +27,10 @@ func Start() {
 	}
 	defer listener.Close()
 
-	for{
+	for {
 		conn, err := listener.Accept()
-		if err != nil{
-			logger.Info("获取客户端连接失败:",err)
+		if err != nil {
+			logger.Info("获取客户端连接失败:", err)
 			continue
 		}
 		fmt.Printf("client[%s] connected\n", conn.RemoteAddr().String())
@@ -39,7 +39,7 @@ func Start() {
 			go bluesky.Get(conn, msgChan)
 			i := 0
 			for {
-				msg := <- msgChan
+				msg := <-msgChan
 				if len(msg) == 0 {
 					//fmt.Println("msg is eof")
 					break

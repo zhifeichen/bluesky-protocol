@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/msg"
 	mockConfig "github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
+	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/msg"
 )
 
 func main() {

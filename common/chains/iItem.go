@@ -2,6 +2,6 @@ package chains
 
 type IItem interface {
 	GetName() string
-	Do(data interface{}) (err error,nextData interface{})
+	Do(data interface{}) (nextData interface{},err error)
 	String() string
 }

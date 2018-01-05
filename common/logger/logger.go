@@ -1,14 +1,14 @@
 package logger
 
 import (
-	"gopkg.in/natefinch/lumberjack.v2"
-	"sync"
-	"log"
-	"io"
-	"os"
 	"fmt"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
+	"log"
+	"os"
 	"path"
 	"runtime"
+	"sync"
 )
 
 // LogLevel is the log level type.
@@ -40,18 +40,16 @@ type Logger struct {
 	fd       *lumberjack.Logger
 	logfd    *log.Logger
 	stdout   bool
-	level      LogLevel
+	level    LogLevel
 }
 
 var (
 	ymLogger *Logger
 	lock     = new(sync.Mutex)
 	once     = new(sync.Once)
-
-
 )
 
-func New(filename string, level LogLevel,stdout bool) *Logger {
+func New(filename string, level LogLevel, stdout bool) *Logger {
 	if ymLogger != nil {
 		return ymLogger
 	}
@@ -59,8 +57,8 @@ func New(filename string, level LogLevel,stdout bool) *Logger {
 	once.Do(func() {
 		ymLogger = &Logger{
 			filename: filename,
-			level:level,
-			stdout:stdout,
+			level:    level,
+			stdout:   stdout,
 		}
 		ymLogger.fd = &lumberjack.Logger{
 			Filename: filename,
@@ -106,8 +104,8 @@ func getRuntimeInfo() (string, string, int) {
 	return function, fn, ln
 }
 
-func (l Logger)doPrintf(level LogLevel,v ...interface{}){
-	if l.logfd == nil{
+func (l Logger) doPrintf(level LogLevel, v ...interface{}) {
+	if l.logfd == nil {
 		return
 	}
 
@@ -124,48 +122,47 @@ func (l Logger)doPrintf(level LogLevel,v ...interface{}){
 
 }
 
-
-
 // TODO 封装?
 func Info(v ...interface{}) {
-	if ymLogger == nil{
-		fmt.Println("日志未初始化: ",v)
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(INFO,v...)
+	ymLogger.doPrintf(INFO, v...)
 
 }
 
 func Debug(v ...interface{}) {
-	if ymLogger == nil{
-		fmt.Println("日志未初始化: ",v)
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(DEBUG,v...)
+	ymLogger.doPrintf(DEBUG, v...)
 }
 
 func Warn(v ...interface{}) {
-	if ymLogger == nil{
-		fmt.Println("日志未初始化: ",v)
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(WARN,v...)
+	ymLogger.doPrintf(WARN, v...)
 }
 
 func Error(v ...interface{}) {
-	if ymLogger == nil{
-		fmt.Println("日志未初始化: ",v)
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(ERROR,v...)
+	ymLogger.doPrintf(ERROR, v...)
 }
+
 /**
-	打印错误,并且
- */
+打印错误,并且
+*/
 func Fatal(v ...interface{}) {
-	if ymLogger == nil{
-		fmt.Println("日志为初始化: ",v)
+	if ymLogger == nil {
+		fmt.Println("日志为初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(FATAL,v...)
+	ymLogger.doPrintf(FATAL, v...)
 }

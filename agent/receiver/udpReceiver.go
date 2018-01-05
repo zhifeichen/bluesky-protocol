@@ -2,11 +2,11 @@ package receiver
 
 import (
 	"bytes"
-	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/common/logger"
-	"net"
 	config "github.com/zhifeichen/bluesky-protocol/agent/cfg"
+	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
+	"net"
 )
 
 func UdpStart() {
@@ -33,22 +33,22 @@ func UdpStart() {
 			continue
 		}
 		msgChan := make(chan []byte, 1)
-			go bluesky.Get(bytes.NewReader(buffer[:n]), msgChan)
-			i := 0
-			for {
-				msg := <- msgChan
-				if len(msg) == 0 {
-					//fmt.Println("msg is eof")
-					break
-				}
-				fmt.Printf("receiced[%d]: %v; message is %v\n", i, msg, bluesky.CheckCRC(msg))
-				i++
-				msgComm := bluesky.Common{}
-				err := msgComm.Unmarshal(msg)
-				if err != nil {
-					continue
-				}
-				bluesky.HandleMessage(&msgComm)
+		go bluesky.Get(bytes.NewReader(buffer[:n]), msgChan)
+		i := 0
+		for {
+			msg := <-msgChan
+			if len(msg) == 0 {
+				//fmt.Println("msg is eof")
+				break
 			}
+			fmt.Printf("receiced[%d]: %v; message is %v\n", i, msg, bluesky.CheckCRC(msg))
+			i++
+			msgComm := bluesky.Common{}
+			err := msgComm.Unmarshal(msg)
+			if err != nil {
+				continue
+			}
+			bluesky.HandleMessage(&msgComm)
+		}
 	}
 }

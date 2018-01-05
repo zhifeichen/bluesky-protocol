@@ -1,14 +1,15 @@
 package chains
 
 import (
-	"fmt"
-	"time"
 	"context"
+	"fmt"
 	"sync"
+	"time"
 )
+
 /**
-	追踪消息
- */
+追踪消息
+*/
 type ChainTrace struct {
 	Step     int
 	Time     int64 // ms
@@ -27,22 +28,22 @@ func (trace *ChainTrace) String() string {
 }
 
 /**
-	chain消息
- */
+chain消息
+*/
 type ChainCtx struct {
 	context.Context
-	mu       sync.Mutex
-	done     chan struct{}
-	err      error
+	mu   sync.Mutex
+	done chan struct{}
+	err  error
 
 	seqno   int64        // 序号
 	t       chainMsgType // 消息类型,main type
 	data    interface{}  // data
 	ackData interface{}
 
-	sync    bool         // 是否等待消息执行结果返回
-	track   bool         // 是否追踪消息
-	traces  []ChainTrace // 追踪结果
+	sync   bool         // 是否等待消息执行结果返回
+	track  bool         // 是否追踪消息
+	traces []ChainTrace // 追踪结果
 
 }
 
@@ -62,7 +63,7 @@ func (c *ChainCtx) Err() error {
 	return c.err
 }
 
-func (c *ChainCtx) Close(ack interface{},err error){
+func (c *ChainCtx) Close(ack interface{}, err error) {
 	c.mu.Lock()
 	c.ackData = ack
 	c.err = err
@@ -72,7 +73,6 @@ func (c *ChainCtx) Close(ack interface{},err error){
 	close(c.done)
 	c.mu.Unlock()
 }
-
 
 func NewContext(t chainMsgType, d interface{}, sync bool, track bool) *ChainCtx {
 	msg := &ChainCtx{
@@ -89,7 +89,7 @@ func NewAddItemContext(d interface{}, sync bool) *ChainCtx {
 	return NewContext(CHAIN_ADD_ITEM, d, sync, false)
 }
 
-func (c *ChainCtx)String() string {
+func (c *ChainCtx) String() string {
 	return fmt.Sprintf(
 		"{seqno:%d, t:%v, sync:%v,track:%v traces:%v}",
 		c.seqno,
@@ -99,7 +99,7 @@ func (c *ChainCtx)String() string {
 		c.traces,
 	)
 }
-func (c *ChainCtx)SimpleString() string {
+func (c *ChainCtx) SimpleString() string {
 	return fmt.Sprintf(
 		"{seqno:%d, t:%v, sync:%v,track:%v}",
 		c.seqno,

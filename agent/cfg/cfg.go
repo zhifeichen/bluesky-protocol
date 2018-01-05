@@ -1,12 +1,12 @@
 package cfg
 
 import (
-	"fmt"
-	"sync"
 	"encoding/json"
-	"os"
-	"github.com/zhifeichen/bluesky-protocol/common/utils"
+	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/utils"
+	"os"
+	"sync"
 )
 
 var (
@@ -15,14 +15,13 @@ var (
 	config  *GlobalConfig
 )
 
-
 type GlobalConfig struct {
-	Debug    bool              `json:"debug"`
-	Ip       string            `json:"ip"`
-	Port     int               `json:"port"`
-	Uuid     string            `json:"uuid"`
-	LogFile  string            `json:"logFile"`
-	UDPAddr  string						 `json:"udpAddr"`
+	Debug   bool   `json:"debug"`
+	Ip      string `json:"ip"`
+	Port    int    `json:"port"`
+	Uuid    string `json:"uuid"`
+	LogFile string `json:"logFile"`
+	UDPAddr string `json:"udpAddr"`
 }
 
 func Config() *GlobalConfig {
@@ -59,8 +58,8 @@ func genAgentUUid() string {
 }
 
 /**
-	初始化配置等
- */
+初始化配置等
+*/
 func InitConfig() (err error) {
 	if config.Uuid == "" {
 		config.Uuid = genAgentUUid()
@@ -72,8 +71,8 @@ func InitConfig() (err error) {
 }
 
 /**
-	解析配置文件
- */
+解析配置文件
+*/
 func ParseConfig(cfg string) error {
 	if cfg == "" {
 		fmt.Println("使用 -c 指定配置文件")

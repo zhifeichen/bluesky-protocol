@@ -1,17 +1,17 @@
 package mock
 
 import (
-	"os"
 	"bufio"
+	"os"
 	//"encoding/hex"
 	"fmt"
 	"strconv"
 	//"strings"
-	"time"
-	sender "github.com/zhifeichen/bluesky-protocol/agentMock/mock/sender"
-	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
 	"encoding/hex"
+	"github.com/zhifeichen/bluesky-protocol/agentMock/mock/config"
+	sender "github.com/zhifeichen/bluesky-protocol/agentMock/mock/sender"
 	"strings"
+	"time"
 )
 
 func open() {
@@ -37,7 +37,7 @@ func open() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Printf("%s: %v\n",line, binMsg)
+		fmt.Printf("%s: %v\n", line, binMsg)
 		sender.Send(binMsg)
 		sender.UDPSend(binMsg)
 		time.Sleep(time.Duration(config.Config().Interval) * time.Second)
@@ -50,7 +50,7 @@ func HexToBye(hex string) []byte {
 	rs := []rune(hex)
 
 	for i := 0; i < length; i++ {
-		s := string(rs[i*2: i*2+2])
+		s := string(rs[i*2 : i*2+2])
 		value, _ := strconv.ParseInt(s, 16, 10)
 		slice[i] = byte(value & 0xFF)
 	}
