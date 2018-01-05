@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/agent/cfg"
 	"github.com/zhifeichen/bluesky-protocol/agent/receiver"
-	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
 	"os"
 	"runtime"
@@ -28,19 +28,19 @@ func main() {
 
 	// 启动系统日志
 	logFilePath := cfg.Config().LogFile
-	level := logger.INFO
+	level := xlogger.INFO
 	if cfg.Config().Debug {
-		level = logger.DEBUG
+		level = xlogger.DEBUG
 	}
-	logger.New(logFilePath, level, cfg.Config().Debug)
-	defer logger.Close()
+	xlogger.New(logFilePath, level, cfg.Config().Debug)
+	defer xlogger.Close()
 
 	// 初始化配置
 	if err = cfg.InitConfig(); err != nil {
 		os.Exit(1)
 	}
 
-	logger.Info("启动服务ip:", cfg.Config().Ip, " port:", cfg.Config().Port, " ... [ok]")
+	xlogger.Info("启动服务ip:", cfg.Config().Ip, " port:", cfg.Config().Port, " ... [ok]")
 
 	bluesky.RegisterAll()
 	go receiver.Start()

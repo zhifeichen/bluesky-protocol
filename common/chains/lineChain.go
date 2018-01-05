@@ -5,7 +5,7 @@ package chains
 */
 import (
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"github.com/zhifeichen/bluesky-protocol/common/utils"
 	"strings"
 	"sync"
@@ -67,7 +67,7 @@ func (c *LineChain) HandleData(data interface{}, sync, trace bool) (error, inter
 */
 func (c *LineChain) Run() {
 	c.once.Do(func() {
-		logger.Info("启动chain:", c.name)
+		xlogger.Info("启动chain:", c.name)
 		go c.run()
 	})
 
@@ -89,7 +89,7 @@ func (c *LineChain) addHandleCtx(ctx *ChainCtx) (error, interface{}, []ChainTrac
 		done := ctx.Done()
 		<-done
 		if err := ctx.Err(); err != nil {
-			logger.Error("处理消息:", ctx.String(), " 失败:", err)
+			xlogger.Error("处理消息:", ctx.String(), " 失败:", err)
 			return common.NewError(common.CHAIN_HANDLE_MSG_ERROR), nil, nil
 		} else {
 			return nil, ctx.ackData, ctx.traces
@@ -121,7 +121,7 @@ func (c *LineChain) run() {
 	}
 
 OUT_LOOP:
-	logger.Warn("退出 chain:", c.name)
+	xlogger.Warn("退出 chain:", c.name)
 	c.once = &sync.Once{}
 }
 
@@ -144,7 +144,7 @@ func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
 处理停止启动等控制消息
 */
 func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
-	logger.Info("处理线性chain:", c.Seqno, "指令:", ctx.String())
+	xlogger.Info("处理线性chain:", c.Seqno, "指令:", ctx.String())
 	stop = false
 	switch ctx.t {
 	case CHAIN_PAUSE:
@@ -152,7 +152,7 @@ func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
 	case CHAIN_STOP:
 		stop = true
 	default:
-		logger.Error("处理线性chain:", c.Seqno, "未知指令:", ctx.String())
+		xlogger.Error("处理线性chain:", c.Seqno, "未知指令:", ctx.String())
 	}
 
 	if ctx.sync {
@@ -191,7 +191,7 @@ func (c *LineChain) doCtx(items []IItem, ctx *ChainCtx) error {
 			ctx.traces = append(ctx.traces, trace)
 		}
 		if err != nil {
-			logger.Error(ctx.String(), " error:", err)
+			xlogger.Error(ctx.String(), " error:", err)
 			if ctx.sync {
 				ctx.Close(nil, err)
 			}

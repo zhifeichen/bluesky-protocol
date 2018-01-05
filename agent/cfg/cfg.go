@@ -3,7 +3,7 @@ package cfg
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/common/logger"
+	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"github.com/zhifeichen/bluesky-protocol/common/utils"
 	"os"
 	"sync"
@@ -42,9 +42,9 @@ func rewriteToCfg(cfgPath string, config *GlobalConfig) error {
 	data, err := json.Marshal(config)
 	if err == nil {
 		if _, err = f.Write(data); err != nil {
-			logger.Info("写入配置文件失败:", err)
+			xlogger.Info("写入配置文件失败:", err)
 		} else {
-			logger.Info("写入配置文件成功 .... [ok]")
+			xlogger.Info("写入配置文件成功 .... [ok]")
 		}
 
 	}
@@ -64,7 +64,7 @@ func InitConfig() (err error) {
 	if config.Uuid == "" {
 		config.Uuid = genAgentUUid()
 		if err = rewriteToCfg(cfgPath, config); err != nil {
-			logger.Error("写入配置文件:", cfgPath, " 错误:", err)
+			xlogger.Error("写入配置文件:", cfgPath, " 错误:", err)
 		}
 	}
 	return

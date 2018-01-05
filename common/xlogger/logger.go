@@ -1,4 +1,4 @@
-package logger
+package xlogger
 
 import (
 	"fmt"
