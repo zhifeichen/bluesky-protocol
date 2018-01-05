@@ -104,14 +104,15 @@ func getRuntimeInfo() (string, string, int) {
 	return function, fn, ln
 }
 
-func (l Logger) doPrintf(level LogLevel, v ...interface{}) {
+func (l Logger) doPrintln(level LogLevel, v ...interface{}) {
 	if l.logfd == nil {
 		return
 	}
 
 	if level >= l.level {
 		funcName, fileName, lineNum := getRuntimeInfo()
-		prefix := fmt.Sprintf("[%5s] [%s] (%s:%d) - ", tagName[level], path.Base(funcName), path.Base(fileName), lineNum)
+		prefix := fmt.Sprintf("[%5s] [%s] (%s:%d) - ", tagName[level], path.Base(funcName),
+			path.Base(fileName), lineNum)
 		value := fmt.Sprintf("%s %s", prefix, fmt.Sprintln(v...))
 		l.logfd.Print(value)
 
@@ -122,14 +123,42 @@ func (l Logger) doPrintf(level LogLevel, v ...interface{}) {
 
 }
 
-// TODO 封装?
+func (l Logger) doPrintf(level LogLevel, format string, v ...interface{}) {
+	if l.logfd == nil {
+		return
+	}
+	if level >= l.level {
+		funcName, fileName, lineNum := getRuntimeInfo()
+		format = fmt.Sprintf("%5s [%s] (%s:%d) - %s", tagName[level], path.Base(funcName), path.Base(fileName), lineNum, format)
+		l.logfd.Printf(format, v...)
+		if level == FATAL {
+			os.Exit(1)
+		}
+	}
+
+}
+
+func Infof(format string, v ...interface{}) {
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
+		return
+	}
+	ymLogger.doPrintf(INFO, format, v...)
+}
 func Info(v ...interface{}) {
 	if ymLogger == nil {
 		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(INFO, v...)
+	ymLogger.doPrintln(INFO, v...)
 
+}
+func Debugf(format string, v ...interface{}) {
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
+		return
+	}
+	ymLogger.doPrintf(DEBUG, format, v...)
 }
 
 func Debug(v ...interface{}) {
@@ -137,15 +166,30 @@ func Debug(v ...interface{}) {
 		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(DEBUG, v...)
+	ymLogger.doPrintln(DEBUG, v...)
 }
 
+func Warnf(format string, v ...interface{}) {
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
+		return
+	}
+	ymLogger.doPrintf(WARN, format, v...)
+}
 func Warn(v ...interface{}) {
 	if ymLogger == nil {
 		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(WARN, v...)
+	ymLogger.doPrintln(WARN, v...)
+}
+
+func Errorf(format string, v ...interface{}) {
+	if ymLogger == nil {
+		fmt.Println("日志未初始化: ", v)
+		return
+	}
+	ymLogger.doPrintf(ERROR, format, v...)
 }
 
 func Error(v ...interface{}) {
@@ -153,7 +197,7 @@ func Error(v ...interface{}) {
 		fmt.Println("日志未初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(ERROR, v...)
+	ymLogger.doPrintln(ERROR, v...)
 }
 
 /**
@@ -164,5 +208,5 @@ func Fatal(v ...interface{}) {
 		fmt.Println("日志为初始化: ", v)
 		return
 	}
-	ymLogger.doPrintf(FATAL, v...)
+	ymLogger.doPrintln(FATAL, v...)
 }
