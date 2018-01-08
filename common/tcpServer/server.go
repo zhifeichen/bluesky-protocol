@@ -143,6 +143,9 @@ func NewServer(opt ...ServerOption) (*Server, error) {
 	return s, nil
 }
 
+//func (s *Server) deleteUdpConn(l net)
+
+// start tcp server
 func (s *Server) Start(l net.Listener) error {
 	s.mu.Lock()
 	if s.lis == nil {
@@ -162,7 +165,7 @@ func (s *Server) Start(l net.Listener) error {
 		s.mu.Unlock()
 	}()
 
-	xlogger.Info("server start, net %s addr %s\n", l.Addr().Network(), l.Addr().String())
+	xlogger.Infof("tcp server start, net %s addr %s\n", l.Addr().Network(), l.Addr().String())
 
 	// TODO 处理timeout
 
@@ -202,7 +205,7 @@ func (s *Server) Start(l net.Listener) error {
 
 		netId := s.netIdentifier.GetAndIncrement()
 		// TODO newServerConn
-		sc := NewServerConn(netId, s, rawConn)
+		sc := NewTcpServerConn(netId, s, rawConn)
 
 		// TODO sched?
 
@@ -224,6 +227,42 @@ func (s *Server) Start(l net.Listener) error {
 		//})
 
 	}
+
+	return nil
+}
+
+// start udp server
+
+func (s *Server) StartUdp(l *net.UDPConn) error {
+	xlogger.Infof("udp server start, net %s\n", l.LocalAddr())
+
+	// TODO 处理timeout
+
+
+	// TODO TLS
+	netId := s.netIdentifier.GetAndIncrement()
+	// TODO newServerConn
+	sc := NewUdpServerConn(netId, s, l)
+
+	// TODO sched?
+
+	s.conns.Store(netId, sc)
+
+	// TODO 分析??
+
+	s.wg.Add(1)
+	go func() {
+		sc.Start()
+	}()
+	xlogger.Infof("accepted client %s, id %d, total %d\n", sc.GetName(), netId, s.ConnsSize())
+	// TODO 打印连接信息?
+	//s.conns.Range(func(k,v interface{}) bool{
+	//	i := k.(int64)
+	//	c := v.(*ServerConn)
+	//	holmes.Infof("client(%d) %s", i, c.Name())
+	//	return true
+	//})
+
 
 	return nil
 }

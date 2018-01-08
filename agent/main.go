@@ -45,7 +45,7 @@ func main() {
 	//go receiver.Start()
 	//go receiver.UdpStart()
 
-	go servers.Start(cfg.Config().Ip,cfg.Config().Port)
+	servers.Start(cfg.Config().Ip,cfg.Config().Port)
 	// TODO 接收信号?
 	select {}
 }

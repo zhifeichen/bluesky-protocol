@@ -10,10 +10,11 @@ import (
 
 // WriteCloser is the interface that groups Write and Close methods.
 type WriteCloser interface {
-	Write(interface{}) error
+	WriteTCP(interface{}) error			// TCP write
+	WriteUDP(interface{},*net.UDPAddr) error	// UDP write
 	Close()
 }
-
+// TCP server conn
 type ServerConn struct {
 	netId   int64
 	belong  *Server
@@ -31,7 +32,7 @@ type ServerConn struct {
 	cancel context.CancelFunc
 }
 
-func NewServerConn(id int64, s *Server, c net.Conn) *ServerConn {
+func NewTcpServerConn(id int64, s *Server, c net.Conn) *ServerConn {
 	sc := &ServerConn{
 		netId:   id,
 		belong:  s,
@@ -44,7 +45,7 @@ func NewServerConn(id int64, s *Server, c net.Conn) *ServerConn {
 
 	sc.ctx, sc.cancel = context.WithCancel(context.WithValue(s.ctx, serverCtx, s))
 
-	sc.name = c.RemoteAddr().String()
+	sc.name = "tcp_" + c.RemoteAddr().String()
 
 	return sc
 }
@@ -133,7 +134,12 @@ func (sc *ServerConn) Close() {
 }
 
 // Write writes a message to the client.
-func (sc *ServerConn) Write(msg interface{}) error {
+func (sc *ServerConn) WriteTCP(msg interface{}) error {
+	return asyncWrite(sc, msg)
+
+}
+func (sc *ServerConn) WriteUDP(msg interface{},_ *net.UDPAddr) error {
+	xlogger.Warnf("%s: writeUDP ? maybe use WriteTCP(msg interface{}) instand!")
 	return asyncWrite(sc, msg)
 
 }

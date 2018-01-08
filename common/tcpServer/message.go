@@ -2,18 +2,12 @@ package tcpServer
 
 import (
 	"bufio"
+	"net"
 )
 
 type Handler interface {
 	Handle(interface{}, WriteCloser) error
-}
-
-// HandlerFunc serves as an adapter to allow the use of ordinary functions as handlers.
-type HandlerFunc func(interface{}, WriteCloser) error
-
-// Handle calls f(ctx, c)
-func (f HandlerFunc) Handle(msg interface{}, c WriteCloser) error{
-	return f(msg, c)
+	HandleUdp(interface{}, WriteCloser,*net.UDPAddr) error
 }
 
 type Codec interface {
