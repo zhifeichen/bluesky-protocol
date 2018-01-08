@@ -4,11 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/agent/cfg"
-	"github.com/zhifeichen/bluesky-protocol/agent/receiver"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
-	"github.com/zhifeichen/bluesky-protocol/common/protocol/bluesky"
 	"os"
 	"runtime"
+	"github.com/zhifeichen/bluesky-protocol/agent/servers/blueSkyProtocol"
 )
 
 func main() {
@@ -42,10 +41,11 @@ func main() {
 
 	xlogger.Info("启动服务ip:", cfg.Config().Ip, " port:", cfg.Config().Port, " ... [ok]")
 
-	bluesky.RegisterAll()
-	go receiver.Start()
-	go receiver.UdpStart()
+	//bluesky.RegisterAll()
+	//go receiver.Start()
+	//go receiver.UdpStart()
 
+	go servers.Start(cfg.Config().Ip,cfg.Config().Port)
 	// TODO 接收信号?
 	select {}
 }
