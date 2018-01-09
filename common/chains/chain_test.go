@@ -1,19 +1,18 @@
-package test
+package chains
 
 import (
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/common/chains"
 	"testing"
 )
 
 type PrintItem struct {
-	chains.BaseItem
+	BaseItem
 	say string
 }
 
 func NewPrintItem(name, say string) *PrintItem {
 	return &PrintItem{
-		chains.BaseItem{
+		BaseItem{
 			Name: name,
 		},
 		say,
@@ -28,7 +27,7 @@ func (item *PrintItem) Do(data interface{}) (interface{}, error) {
 
 func TestChain(t *testing.T) {
 	t.Run("测试 chain", func(t *testing.T) {
-		lineChain := chains.NewLineChains("测试")
+		lineChain := NewLineChains("测试")
 		fmt.Println(lineChain.String())
 		lineChain.Run()
 		say1 := NewPrintItem("sayItem-1", " what")

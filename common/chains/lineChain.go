@@ -13,11 +13,13 @@ import (
 )
 
 type LineChain struct {
-	Seqno string         // 序列号
-	name  string         // 处理链名称
-	items []IItem        // tasks
-	ctxes chan *ChainCtx // 消息队列
-	once  *sync.Once
+	Seqno 	string         // 序列号
+	name  	string         // 处理链名称
+	items 	[]IItem        // tasks
+	ctxes 	chan *ChainCtx // 消息队列
+
+	mu 	sync.Mutex
+	once  	sync.Once
 }
 
 func NewLineChains(name string) *LineChain {
@@ -25,8 +27,9 @@ func NewLineChains(name string) *LineChain {
 		fmt.Sprintf("lc_%d", time.Now().Unix()),
 		name,
 		make([]IItem, 0),
-		make(chan *ChainCtx),
-		&sync.Once{},
+		make(chan *ChainCtx,ITEM_CHANNEL_DEFAULT),
+		sync.Mutex{},
+		sync.Once{},
 	}
 }
 
@@ -122,7 +125,7 @@ func (c *LineChain) run() {
 
 OUT_LOOP:
 	xlogger.Warn("退出 chain:", c.name)
-	c.once = &sync.Once{}
+	c.once = sync.Once{}
 }
 
 /**
@@ -131,9 +134,11 @@ OUT_LOOP:
 */
 func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
 	t := make([]IItem, len(c.items))
+	c.mu.Lock()
 	copy(t, c.items)
 	t = append(t, ctx.data.(IItem))
 	c.items = t
+	c.mu.Unlock()
 	if ctx.sync {
 		ctx.Close(nil, nil)
 	}

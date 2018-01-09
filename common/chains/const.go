@@ -9,6 +9,8 @@ const (
 	CHAIN_PAUSE               // 暂停chain
 
 	CHAIN_HANDLE_DATA = iota + 100
+
+	ITEM_CHANNEL_DEFAULT = 1024
 )
 
 type chainMsgType int32
