@@ -9,7 +9,7 @@ import (
 )
 
 type BlueSkyProtocolServer struct {
-	*tcpServer.Server
+	*tcpServer.TCPServer
 	ip   string
 	port int
 }
@@ -31,7 +31,7 @@ func NewBlueSkyProtocolServer(ip string, port int, handler tcpServer.Handler) *B
 
 	onHandler := tcpServer.CustomHandlerOption(handler)
 
-	server, _ := tcpServer.NewServer(onConnect, onDisConnect, onCodec,onHandler)
+	server, _ := tcpServer.NewTCPServer(onConnect, onDisConnect, onCodec,onHandler)
 	return &BlueSkyProtocolServer{
 		server,
 		ip,
@@ -46,13 +46,13 @@ func StartTcpServer(ip string, port int, handler tcpServer.Handler) (error, *Blu
 		return err, nil
 	}
 	svr := NewBlueSkyProtocolServer(ip, port, handler)
-	svr.Server.Start(l)
+	svr.TCPServer.Start(l)
 	return nil, svr
 }
 
 
 type BlueSkyProtocolUdpServer struct {
-	*tcpServer.Server
+	*tcpServer.UDPServer
 	ip   string
 	port int
 }
@@ -63,7 +63,7 @@ func NewBlueSkyProtocolUdpServer(ip string, port int, handler tcpServer.Handler)
 
 	onHandler := tcpServer.CustomHandlerOption(handler)
 
-	server, _ := tcpServer.NewServer(onCodec,onHandler)
+	server, _ := tcpServer.NewUDPServer(onCodec,onHandler)
 	return &BlueSkyProtocolUdpServer{
 		server,
 		ip,
@@ -84,6 +84,6 @@ func StartUdpServer(ip string, port int, handler tcpServer.Handler) (error, *Blu
 		return err, nil
 	}
 	svr := NewBlueSkyProtocolUdpServer(ip, port, handler)
-	svr.Server.StartUdp(l)
+	svr.UDPServer.Start(l)
 	return nil, svr
 }
