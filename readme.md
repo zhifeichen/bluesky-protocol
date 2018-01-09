@@ -13,7 +13,8 @@
     
 ### 初始化
 
-
+#### 初始化工程
+    glide init
 
 
 ### 代码目录结构
@@ -22,12 +23,28 @@
         |__ doc                                             文档目录
         |__ logs                                            日志目录
         |__ readme.md                                       README文件
+        |__ cfg                                             配置
         |__ agent                                           代理程序模块
+            |__ servers                                     各种服务
+                |__ blueSkyProtocol                         bluesky协议服务,包括tcp/udp侦听以及handler
+                
+                
         |__ common                                          通用模块
-            |__ logger                                      日志模块
+            |__ logger                                      日志模块    
             |__ models                                      模型
             |__ utils                                       通用帮组类
-
+            
+            |__ chains                                      流处理组件
+            |__ tcpServer                                   tcp/udp 通讯框架
+            
+            |__ protocol
+                |__ bluesky                                 bluesky协议,飞哥用
+                    |__ server                              bluesky协议tcp/udp服务类以及codec类
+                    ...                                     协议内容
+                    
+                |__ jianchi                                 
+                    
+                    
 
 ### 流程
 
