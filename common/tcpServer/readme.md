@@ -8,6 +8,6 @@
 
 ## changeLog
 
-#### 1. 为每一个serverConn增加独立的codec实例
-#### 2. 支持udp
+#### 1. 支持udp
+#### 2. 简化message机制
 
