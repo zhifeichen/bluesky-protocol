@@ -17,7 +17,7 @@ type WriteCloser interface {
 // TCP server conn
 type ServerConn struct {
 	netId   int64
-	belong  *Server
+	belong  *TCPServer
 	rawConn net.Conn
 	name    string
 
@@ -32,7 +32,7 @@ type ServerConn struct {
 	cancel context.CancelFunc
 }
 
-func NewTcpServerConn(id int64, s *Server, c net.Conn) *ServerConn {
+func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *ServerConn {
 	sc := &ServerConn{
 		netId:   id,
 		belong:  s,

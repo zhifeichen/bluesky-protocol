@@ -23,7 +23,7 @@ type udpHandleMsg struct{
 type UdpServerConn struct {
 	mtu 	int
 	netId   int64
-	belong  *Server
+	belong  *UDPServer
 	rawConn *net.UDPConn
 	name    string
 
@@ -38,7 +38,7 @@ type UdpServerConn struct {
 	cancel context.CancelFunc
 }
 
-func NewUdpServerConn(id int64, s *Server, c *net.UDPConn) *UdpServerConn {
+func NewUdpServerConn(id int64, s *UDPServer, c *net.UDPConn) *UdpServerConn {
 	sc := &UdpServerConn{
 		mtu:	1500,
 		netId:   id,

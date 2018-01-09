@@ -41,10 +41,6 @@ func main() {
 
 	xlogger.Info("启动服务ip:", cfg.Config().Ip, " port:", cfg.Config().Port, " ... [ok]")
 
-	//bluesky.RegisterAll()
-	//go receiver.Start()
-	//go receiver.UdpStart()
-
 	servers.Start(cfg.Config().Ip,cfg.Config().Port)
 	// TODO 接收信号?
 	select {}
