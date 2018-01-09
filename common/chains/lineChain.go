@@ -13,13 +13,13 @@ import (
 )
 
 type LineChain struct {
-	Seqno 	string         // 序列号
-	name  	string         // 处理链名称
-	items 	[]IItem        // tasks
-	ctxes 	chan *ChainCtx // 消息队列
+	Seqno string         // 序列号
+	name  string         // 处理链名称
+	items []IItem        // tasks
+	ctxes chan *ChainCtx // 消息队列
 
-	mu 	sync.Mutex
-	once  	sync.Once
+	mu   sync.Mutex
+	once sync.Once
 }
 
 func NewLineChains(name string) *LineChain {
@@ -27,7 +27,7 @@ func NewLineChains(name string) *LineChain {
 		fmt.Sprintf("lc_%d", time.Now().Unix()),
 		name,
 		make([]IItem, 0),
-		make(chan *ChainCtx,ITEM_CHANNEL_DEFAULT),
+		make(chan *ChainCtx, ITEM_CHANNEL_DEFAULT),
 		sync.Mutex{},
 		sync.Once{},
 	}
@@ -149,7 +149,7 @@ func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
 处理停止启动等控制消息
 */
 func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
-	xlogger.Info("处理线性chain:", c.Seqno, "指令:", ctx.String())
+	xlogger.Debug("处理线性chain:", c.Seqno, "指令:", ctx.String())
 	stop = false
 	switch ctx.t {
 	case CHAIN_PAUSE:
@@ -160,9 +160,7 @@ func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
 		xlogger.Error("处理线性chain:", c.Seqno, "未知指令:", ctx.String())
 	}
 
-	if ctx.sync {
-		ctx.Close(nil, nil)
-	}
+	ctx.Close(nil, nil)
 
 	return err, stop
 }
@@ -180,34 +178,32 @@ func (c *LineChain) handleCtx(ctx *ChainCtx) error {
 */
 func (c *LineChain) doCtx(items []IItem, ctx *ChainCtx) error {
 	for i, item := range items {
-		var st int64 = 0
-		if ctx.track {
-			st = time.Now().UnixNano() / 1000
-		}
+		var (
+			st       int64 = 0
+			duration int64 = 0
+		)
+		st = time.Now().UnixNano() / 1000
 
 		d, err := item.Do(ctx.data)
-		if ctx.track {
-			trace := ChainTrace{
-				i,
-				st,
-				time.Now().UnixNano()/1000 - st,
-				err,
-			}
-			ctx.traces = append(ctx.traces, trace)
+
+		duration = time.Now().UnixNano()/1000 - st
+		trace := ChainTrace{
+			i,
+			st,
+			duration,
+			err,
 		}
+		ctx.traces = append(ctx.traces, trace)
+		ctx.duration += duration
 		if err != nil {
 			xlogger.Error(ctx.String(), " error:", err)
-			if ctx.sync {
-				ctx.Close(nil, err)
-			}
+			ctx.Close(nil, err)
 			return err
 		} else {
 			ctx.data = d
 		}
 	}
-	if ctx.sync {
-		ctx.Close(ctx.data, nil)
-	}
+	ctx.Close(ctx.data, nil)
 
 	return nil
 }

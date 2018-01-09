@@ -19,7 +19,7 @@ type ChainTrace struct {
 
 func (trace *ChainTrace) String() string {
 	return fmt.Sprintf(
-		"{seqno:%d, time:%v, dur:%v, error:%v}",
+		"{seqno:%d, time:%v, dur:%vus, error:%v}",
 		trace.Step,
 		trace.Time,
 		trace.Duration,
@@ -41,10 +41,10 @@ type ChainCtx struct {
 	data    interface{}  // data
 	ackData interface{}
 
-	sync   bool         // 是否等待消息执行结果返回
-	track  bool         // 是否追踪消息
-	traces []ChainTrace // 追踪结果
-
+	sync     bool         // 是否等待消息执行结果返回
+	track    bool         // 是否追踪消息
+	traces   []ChainTrace // 追踪结果
+	duration int64
 }
 
 func (c *ChainCtx) Done() <-chan struct{} {

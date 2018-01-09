@@ -3,6 +3,7 @@ package chains
 import (
 	"fmt"
 	"testing"
+	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 )
 
 type PrintItem struct {
@@ -79,7 +80,10 @@ func TestChain(t *testing.T) {
 			fmt.Println("处理数据:", data, " 错误:", err)
 			t.Fail()
 		} else {
-			fmt.Println("处理数据:\"", data, "\" 结果:\"", totalWord, "\" tracks:", traces)
+			fmt.Println("处理数据:\"", data, "\" 结果:\"", totalWord, "\"")
+			for _, t := range traces {
+				fmt.Print(t.String(),"\n")
+			}
 			if totalWord != "i say: what a nice day! isn't it?" {
 				t.Fatal(fmt.Sprintf("%v != %v", totalWord, "i say: what a nice day! isn't it?"))
 			}
