@@ -38,12 +38,15 @@
                 
                 
         |__ common                                          通用模块
-            |__ logger                                      日志模块    
+            |__ logger                                      日志模块
+                |__ readme.md                               使用说明
             |__ models                                      模型
             |__ utils                                       通用帮组类
             
             |__ chains                                      流处理组件
+                |__ readme.md                               使用说明
             |__ tcpServer                                   tcp/udp 通讯框架
+            |   __ readme.md                                使用说明
             
             |__ protocol
                 |__ bluesky                                 bluesky协议,飞哥用
@@ -58,12 +61,22 @@
                     
 #### xlogger 日志库
 
+[日志框架说明](common/logger/readme.md)
+
 #### tcp/udp server framework   socket服务框架
+
+[tcp/udp 框架说明](common/tcpServer/readme.md)
                 
-#### chains framework  流处理框架               
+#### chains framework  流处理框架
+
+[流处理框架说明](common/chains/readme.md)
+
 
 ### 流程
 
 ### 安装
 
 ### 协议参照
+
+
+### changelog
