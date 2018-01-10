@@ -27,9 +27,14 @@ func (item *PrintItem) Do(data interface{}) (interface{}, error) {
 
 func TestChain(t *testing.T) {
 	t.Run("测试 chain", func(t *testing.T) {
+
+		// 1. 创建任务链
 		lineChain := NewLineChains("测试")
 		fmt.Println(lineChain.String())
+		// 2. 运行任务链
 		lineChain.Run()
+
+		// 3. 加入执行任务
 		say1 := NewPrintItem("sayItem-1", " what")
 		say2 := NewPrintItem("sayItem-2", " a")
 		say3 := NewPrintItem("sayItem-3", " nice")
@@ -56,6 +61,8 @@ func TestChain(t *testing.T) {
 
 		data := "i say:"
 
+		// 4. 处理数据,并等待返回
+
 		if totalWord, _, err := lineChain.Do(data, true, false); err != nil {
 			fmt.Println("处理数据:", data, " 错误:", err)
 			t.Fail()
@@ -75,6 +82,8 @@ func TestChain(t *testing.T) {
 			t.Fail()
 		}
 		fmt.Println(lineChain.String())
+
+		// 4. 处理数据,并等待返回
 		if totalWord, traces, err := lineChain.Do(data, true, true); err != nil {
 			fmt.Println("处理数据:", data, " 错误:", err)
 			t.Fail()
@@ -88,19 +97,19 @@ func TestChain(t *testing.T) {
 			}
 		}
 
+		// 5. 关闭任务链
 		lineChain.Stop()
 
 	})
 }
 
-func NewPrintIChain(name string, words []string, t *testing.T) *LineChain {
+func NewPrintIChain(name string, words []string) *LineChain {
 	lineChain := NewLineChains(name)
 	lineChain.Run()
 	for i, w := range words {
 		say := NewPrintItem(fmt.Sprintf("%s-%d", name, i), w)
 		if err := lineChain.AddTask(say); err != nil {
 			fmt.Println("新增item ", say.String(), " err:", err)
-			t.Fail()
 		}
 	}
 	return lineChain
@@ -108,13 +117,17 @@ func NewPrintIChain(name string, words []string, t *testing.T) *LineChain {
 
 func TestTreeChain(t *testing.T) {
 	t.Run("测试 tree chain", func(t *testing.T) {
+		// 1. 创建根 任务链
 		lineChain := NewLineChains("测试root")
 		fmt.Println(lineChain.String())
+
+		// 2. 运行根任务链
 		lineChain.Run()
-		say1 := NewPrintIChain("sayIChain-1", []string{" wh", "at"}, t)
-		say2 := NewPrintIChain("sayIChain-2", []string{" ", "a"}, t)
-		say3 := NewPrintIChain("sayIChain-3", []string{" ni", "ce"}, t)
-		say4 := NewPrintIChain("sayIChain-4", []string{" d", "ay!"}, t)
+
+		// 3. 创建并加入多个子任务链
+		say1 := NewPrintIChain("sayIChain-1", []string{" wh", "at"})
+		say2 := NewPrintIChain("sayIChain-2", []string{" ", "a"})
+		say3 := NewPrintIChain("sayIChain-3", []string{" ni", "ce"})
 
 		if err := lineChain.AddIChain(say1); err != nil {
 			fmt.Println("新增iChain ", say1.String(), " err:", err)
@@ -128,13 +141,16 @@ func TestTreeChain(t *testing.T) {
 			fmt.Println("新增iChain ", say3.String(), " err:", err)
 			t.Fail()
 		}
-		if err := lineChain.AddIChain(say4); err != nil {
+		// 4. 创建并加入子任务
+		say4 := NewPrintItem("sayItem-4", " day!")
+		if err := lineChain.AddTask(say4); err != nil {
 			fmt.Println("新增iChain ", say4.String(), " err:", err)
 			t.Fail()
 		}
 
 		fmt.Println(lineChain.String())
 
+		// 5. 运行数据
 		data := "i say:"
 		if totalWord, traces, err := lineChain.Do(data, true, true); err != nil {
 			fmt.Println("处理数据:", data, " 错误:", err)
@@ -149,6 +165,7 @@ func TestTreeChain(t *testing.T) {
 			}
 		}
 
+		// 5. 关闭任务链
 		lineChain.Stop()
 
 	})
