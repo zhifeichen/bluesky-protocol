@@ -1,7 +1,7 @@
 package chains
 
 /**
-线性运行chain, chain中的任务一个个运行,没有嵌套
+线性运行chain, chain中的任务一个个运行,支持嵌套
 */
 import (
 	"fmt"
@@ -229,7 +229,6 @@ func (c *LineChain) doCtx(items []interface{}, ctx *ChainCtx) error {
 			} else {
 				ctx.data = d
 			}
-
 		}
 
 	}
