@@ -7,12 +7,14 @@ import (
 	"github.com/zhifeichen/bluesky-protocol/common/utils"
 	"os"
 	"sync"
+	"log"
 )
 
 var (
 	lock    = new(sync.RWMutex)
 	cfgPath string
 	config  *GlobalConfig
+	Root    string
 )
 
 type GlobalConfig struct {
@@ -24,6 +26,13 @@ type GlobalConfig struct {
 	UDPAddr string `json:"udpAddr"`
 }
 
+func InitRootDir() {
+	var err error
+	Root, err = os.Getwd()
+	if err != nil {
+		log.Fatalln("getwd fail:", err)
+	}
+}
 func Config() *GlobalConfig {
 	lock.RLock()
 	defer lock.RUnlock()

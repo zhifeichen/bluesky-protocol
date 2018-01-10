@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"github.com/zhifeichen/bluesky-protocol/common/utils"
-	"strings"
 	"sync"
 	"time"
+	"strings"
 )
 
 type LineChain struct {
 	Seqno string         // 序列号
 	name  string         // 处理链名称
-	items []IItem        // tasks
+	items []interface{}  // tasks
 	ctxes chan *ChainCtx // 消息队列
 
 	mu   sync.Mutex
@@ -26,11 +26,15 @@ func NewLineChains(name string) *LineChain {
 	return &LineChain{
 		fmt.Sprintf("lc_%d", time.Now().Unix()),
 		name,
-		make([]IItem, 0),
+		make([]interface{}, 0),
 		make(chan *ChainCtx, ITEM_CHANNEL_DEFAULT),
 		sync.Mutex{},
 		sync.Once{},
 	}
+}
+
+func (c *LineChain) GetName() string {
+	return c.name
 }
 
 /**
@@ -38,42 +42,47 @@ func NewLineChains(name string) *LineChain {
 */
 func (c *LineChain) String() string {
 	names := make([]string, 0)
-	for _, v := range c.items {
-		names = append(names, v.GetName())
+	for _, c := range c.items {
+		switch c := c.(type) {
+		case ITask:
+			names = append(names, c.String())
+		case IChain:
+			names = append(names, c.String())
+		}
 	}
-	return fmt.Sprintf(" 线性处理链{Name:%s,tasks:[%s]}", c.name, strings.Join(names, " -> "))
+	return fmt.Sprintf(" {lineChains name:%s,tasks:[%s]}", c.name, strings.Join(names, " -> "))
 }
 
 /**
 增加任务
-TODO 增加多个任务?
 */
-func (c *LineChain) AddItems(item IItem) error {
-	ctx := NewAddItemContext(item, false)
-	err, _, _ := c.addHandleCtx(ctx)
-	return err
-}
-func (c *LineChain) AddSyncItem(item IItem) error {
-	ctx := NewAddItemContext(item, true)
+func (c *LineChain) AddTask(task ITask) error {
+	ctx := NewAddItemContext(task, true)
 	err, _, _ := c.addHandleCtx(ctx)
 	return err
 }
 
-func (c *LineChain) HandleData(data interface{}, sync, trace bool) (error, interface{}, []ChainTrace) {
+func (c *LineChain) AddIChain(chain IChain) error {
+	ctx := NewAddItemContext(chain, true)
+	err, _, _ := c.addHandleCtx(ctx)
+	return err
+}
+
+func (c *LineChain) Do(data interface{}, sync, trace bool) (interface{}, []ChainTrace, error) {
 	ctx := NewContext(CHAIN_HANDLE_DATA, data, sync, trace)
 	err, d, traces := c.addHandleCtx(ctx)
-	return err, d, traces
+	return d, traces, err
 }
 
 /**
 启动chain
 */
-func (c *LineChain) Run() {
+func (c *LineChain) Run() error {
 	c.once.Do(func() {
 		xlogger.Info("启动chain:", c.name)
 		go c.run()
 	})
-
+	return nil
 }
 
 func (c *LineChain) Stop() error {
@@ -133,10 +142,10 @@ OUT_LOOP:
 拷贝任务链并新增任务, 避免任务链执行过程中变化的问题
 */
 func (c *LineChain) handleAddItemCtx(ctx *ChainCtx) error {
-	t := make([]IItem, len(c.items))
+	t := make([]interface{}, len(c.items))
 	c.mu.Lock()
 	copy(t, c.items)
-	t = append(t, ctx.data.(IItem))
+	t = append(t, ctx.data)
 	c.items = t
 	c.mu.Unlock()
 	if ctx.sync {
@@ -176,34 +185,75 @@ func (c *LineChain) handleCtx(ctx *ChainCtx) error {
 /**
 处理普通消息
 */
-func (c *LineChain) doCtx(items []IItem, ctx *ChainCtx) error {
+func (c *LineChain) doCtx(items []interface{}, ctx *ChainCtx) error {
 	for i, item := range items {
-		var (
-			st       int64 = 0
-			duration int64 = 0
-		)
-		st = time.Now().UnixNano() / 1000
+		switch item := item.(type) {
+		case ITask:
+			d, trace, err := c.doItem(i, item, ctx.data)
+			ctx.traces = append(ctx.traces, trace)
+			ctx.duration += trace.Duration
+			if err != nil {
+				xlogger.Error(ctx.String(), " error:", err)
+				ctx.Close(nil, err)
+				return err
+			} else {
+				ctx.data = d
+			}
+		case IChain:
+			d, traces, err := item.Do(ctx.data, true, true)
+			var (
+				st       int64 = 0
+				duration int64 = 0
+			)
+			for _, t := range traces {
+				if 0 == st {
+					st = t.Time
+				}
+				duration += t.Duration
+			}
 
-		d, err := item.Do(ctx.data)
+			trace := ChainTrace{
+				Name:     item.GetName(),
+				Step:     i,
+				Time:     st,
+				Duration: duration,
+				Error:    err,
+				Children: traces,
+			}
+			ctx.traces = append(ctx.traces, trace)
+			ctx.duration += trace.Duration
+			if err != nil {
+				xlogger.Error(ctx.String(), " error:", err)
+				ctx.Close(nil, err)
+				return err
+			} else {
+				ctx.data = d
+			}
 
-		duration = time.Now().UnixNano()/1000 - st
-		trace := ChainTrace{
-			i,
-			st,
-			duration,
-			err,
 		}
-		ctx.traces = append(ctx.traces, trace)
-		ctx.duration += duration
-		if err != nil {
-			xlogger.Error(ctx.String(), " error:", err)
-			ctx.Close(nil, err)
-			return err
-		} else {
-			ctx.data = d
-		}
+
 	}
 	ctx.Close(ctx.data, nil)
 
 	return nil
+}
+
+func (c *LineChain) doItem(step int, item ITask, data interface{}) (interface{}, ChainTrace, error) {
+	var (
+		st       int64 = 0
+		duration int64 = 0
+	)
+	st = time.Now().UnixNano() / 1000
+
+	d, err := item.Do(data)
+
+	duration = time.Now().UnixNano()/1000 - st
+	trace := ChainTrace{
+		Name:     item.GetName(),
+		Step:     step,
+		Time:     st,
+		Duration: duration,
+		Error:    err,
+	}
+	return d, trace, err
 }

@@ -1,30 +1,39 @@
 package chains
 
 import (
-	"context"
 	"fmt"
-	"sync"
 	"time"
+	"github.com/zhifeichen/bluesky-protocol/common/context"
 )
 
 /**
 追踪消息
 */
 type ChainTrace struct {
+	Name     string
 	Step     int
 	Time     int64 // ms
 	Duration int64
 	Error    error
+	Children []ChainTrace
 }
 
 func (trace *ChainTrace) String() string {
+
+	msgs := make([]string, len(trace.Children)+2)
+	for _, t := range trace.Children {
+		msgs = append(msgs, t.String())
+	}
 	return fmt.Sprintf(
-		"{seqno:%d, time:%v, dur:%vus, error:%v}",
+		"{seqno:%d,name:%s, time:%v, dur:%vus, err:%v, subs:%v}",
 		trace.Step,
+		trace.Name,
 		trace.Time,
 		trace.Duration,
 		trace.Error,
+		msgs,
 	)
+
 }
 
 /**
@@ -32,14 +41,11 @@ chain消息
 */
 type ChainCtx struct {
 	context.Context
-	mu   sync.Mutex
-	done chan struct{}
-	err  error
-
-	seqno   int64        // 序号
-	t       chainMsgType // 消息类型,main type
-	data    interface{}  // data
-	ackData interface{}
+	ctxCancel context.CancelFunc
+	seqno     int64        // 序号
+	t         chainMsgType // 消息类型,main type
+	data      interface{}  // data
+	ackData   interface{}
 
 	sync     bool         // 是否等待消息执行结果返回
 	track    bool         // 是否追踪消息
@@ -47,40 +53,21 @@ type ChainCtx struct {
 	duration int64
 }
 
-func (c *ChainCtx) Done() <-chan struct{} {
-	c.mu.Lock()
-	if c.done == nil {
-		c.done = make(chan struct{})
-	}
-	d := c.done
-	c.mu.Unlock()
-	return d
-}
-
-func (c *ChainCtx) Err() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.err
-}
-
 func (c *ChainCtx) Close(ack interface{}, err error) {
-	c.mu.Lock()
+	c.Context.Close(err)
 	c.ackData = ack
-	c.err = err
-	if c.done == nil {
-		c.done = make(chan struct{})
-	}
-	close(c.done)
-	c.mu.Unlock()
 }
 
 func NewContext(t chainMsgType, d interface{}, sync bool, track bool) *ChainCtx {
+	ctx, ctxCancel := context.WithCancel(context.Background())
 	msg := &ChainCtx{
-		seqno: time.Now().Unix(),
-		t:     t,
-		data:  d,
-		sync:  sync,
-		track: track,
+		Context:   ctx,
+		ctxCancel: ctxCancel,
+		seqno:     time.Now().Unix(),
+		t:         t,
+		data:      d,
+		sync:      sync,
+		track:     track,
 	}
 	return msg
 }
