@@ -3,7 +3,6 @@ package chains
 import (
 	"fmt"
 	"testing"
-	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 )
 
 type PrintItem struct {
