@@ -10,7 +10,7 @@ const (
 
 	CHAIN_HANDLE_DATA = iota + 100
 
-	ITEM_CHANNEL_DEFAULT = 1024
+	ITEM_CHANNEL_DEFAULT = 20
 )
 
 type chainMsgType int32

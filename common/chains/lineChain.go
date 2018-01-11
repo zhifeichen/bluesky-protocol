@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 	"strings"
+	"sync/atomic"
 )
 
 type LineChain struct {
@@ -20,6 +21,9 @@ type LineChain struct {
 
 	mu   sync.Mutex
 	once sync.Once
+
+	// 运行信息
+	curWorks int32 // 当前运行的任务数
 }
 
 func NewLineChains(name string) *LineChain {
@@ -30,11 +34,16 @@ func NewLineChains(name string) *LineChain {
 		make(chan *ChainCtx, ITEM_CHANNEL_DEFAULT),
 		sync.Mutex{},
 		sync.Once{},
+		0,
 	}
 }
 
 func (c *LineChain) GetName() string {
 	return c.name
+}
+
+func (c *LineChain) CountWorks() int32 {
+	return c.curWorks
 }
 
 /**
@@ -94,6 +103,14 @@ func (c *LineChain) Stop() error {
 /**
 -------------  以下为私有方法  ---------------
 */
+
+func (c *LineChain) addWorksCurWorksCount() {
+	atomic.AddInt32(&c.curWorks, 1)
+}
+
+func (c *LineChain) decWorksCurWorksCount() {
+	atomic.AddInt32(&c.curWorks, -1)
+}
 
 func (c *LineChain) addHandleCtx(ctx *ChainCtx) (error, interface{}, []ChainTrace) {
 	c.ctxes <- ctx
@@ -186,6 +203,7 @@ func (c *LineChain) handleCtx(ctx *ChainCtx) error {
 处理普通消息
 */
 func (c *LineChain) doCtx(items []interface{}, ctx *ChainCtx) error {
+	c.addWorksCurWorksCount()
 	for i, item := range items {
 		switch item := item.(type) {
 		case ITask:
@@ -233,7 +251,7 @@ func (c *LineChain) doCtx(items []interface{}, ctx *ChainCtx) error {
 
 	}
 	ctx.Close(ctx.data, nil)
-
+	c.decWorksCurWorksCount()
 	return nil
 }
 
