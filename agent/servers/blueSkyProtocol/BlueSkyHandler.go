@@ -4,6 +4,7 @@ import (
 	"github.com/zhifeichen/bluesky-protocol/common/tcpServer"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"net"
+	"errors"
 )
 
 type BlueSkyHandler struct {
@@ -25,5 +26,6 @@ func (h* BlueSkyHandler)HandleUdp(msg interface{},c tcpServer.WriteCloser,remote
 
 	// TODO write ack ..
 	//c.WriteUDP(xx,remoteAddr)
-	return nil
+	panic(errors.New("测试错误"))
+	return errors.New("测试错误")
 }
