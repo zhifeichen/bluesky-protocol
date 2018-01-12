@@ -355,7 +355,6 @@ func handleUdpLoop(c WriteCloser, wg *sync.WaitGroup) {
 
 func doHandleLoop(hanlder Handler,msg udpHandleMsg,sc *UdpServerConn) (err error){
 	defer func() {
-		xlogger.Errorf("%s handle panics111: \n", sc.name)
 		if p := recover(); p != nil {
 			xlogger.Errorf("%s handle panics: %v\n", sc.name, p)
 		}
