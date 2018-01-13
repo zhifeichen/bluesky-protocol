@@ -4,34 +4,34 @@ import (
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"net"
 	"fmt"
-	"github.com/zhifeichen/bluesky-protocol/common/tcpServer"
+	"github.com/zhifeichen/bluesky-protocol/common/server"
 	"errors"
 )
 
 type BlueSkyProtocolServer struct {
-	*tcpServer.TCPServer
+	*server.TCPServer
 	ip   string
 	port int
 }
 
 
-func NewBlueSkyProtocolServer(ip string, port int, handler tcpServer.Handler) *BlueSkyProtocolServer {
-	onConnect := tcpServer.OnConnectOption(func(conn tcpServer.WriteCloser) bool {
-		sc := conn.(*tcpServer.ServerConn)
+func NewBlueSkyProtocolServer(ip string, port int, handler server.Handler) *BlueSkyProtocolServer {
+	onConnect := server.OnConnectOption(func(conn server.WriteCloser) bool {
+		sc := conn.(*server.ServerConn)
 		xlogger.Info("new blueSkyProtocol conn ", sc.RemoteAddr().String(), "...")
 		return true
 	})
 
-	onDisConnect := tcpServer.OnCloseOption(func(conn tcpServer.WriteCloser) {
-		sc := conn.(*tcpServer.ServerConn)
+	onDisConnect := server.OnCloseOption(func(conn server.WriteCloser) {
+		sc := conn.(*server.ServerConn)
 		xlogger.Info("blueSkyProtocol conn ", sc.RemoteAddr().String(), " disconnect.")
 	})
 
-	onCodec := tcpServer.OnCustomCodecOption(&BlueSkyCodec{})
+	onCodec := server.OnCustomCodecOption(&BlueSkyCodec{})
 
-	onHandler := tcpServer.CustomHandlerOption(handler)
+	onHandler := server.CustomHandlerOption(handler)
 
-	server, _ := tcpServer.NewTCPServer(onConnect, onDisConnect, onCodec,onHandler)
+	server, _ := server.NewTCPServer(onConnect, onDisConnect, onCodec,onHandler)
 	return &BlueSkyProtocolServer{
 		server,
 		ip,
@@ -39,7 +39,7 @@ func NewBlueSkyProtocolServer(ip string, port int, handler tcpServer.Handler) *B
 	}
 }
 
-func StartTcpServer(ip string, port int, handler tcpServer.Handler) (error, *BlueSkyProtocolServer) {
+func StartTcpServer(ip string, port int, handler server.Handler) (error, *BlueSkyProtocolServer) {
 	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
 		xlogger.Error("start listen error", err)
@@ -52,18 +52,18 @@ func StartTcpServer(ip string, port int, handler tcpServer.Handler) (error, *Blu
 
 
 type BlueSkyProtocolUdpServer struct {
-	*tcpServer.UDPServer
+	*server.UDPServer
 	ip   string
 	port int
 }
 
-func NewBlueSkyProtocolUdpServer(ip string, port int, handler tcpServer.Handler) *BlueSkyProtocolUdpServer {
+func NewBlueSkyProtocolUdpServer(ip string, port int, handler server.Handler) *BlueSkyProtocolUdpServer {
 
-	onCodec := tcpServer.OnCustomCodecOption(&BlueSkyCodec{})
+	onCodec := server.OnCustomCodecOption(&BlueSkyCodec{})
 
-	onHandler := tcpServer.CustomHandlerOption(handler)
+	onHandler := server.CustomHandlerOption(handler)
 
-	server, _ := tcpServer.NewUDPServer(onCodec,onHandler)
+	server, _ := server.NewUDPServer(onCodec,onHandler)
 	return &BlueSkyProtocolUdpServer{
 		server,
 		ip,
@@ -71,7 +71,7 @@ func NewBlueSkyProtocolUdpServer(ip string, port int, handler tcpServer.Handler)
 	}
 }
 
-func StartUdpServer(ip string, port int, handler tcpServer.Handler) (error, *BlueSkyProtocolUdpServer) {
+func StartUdpServer(ip string, port int, handler server.Handler) (error, *BlueSkyProtocolUdpServer) {
 	//xlogger.Debugf("建立udp侦听: %s:%d",ip,port)
 	udpAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {

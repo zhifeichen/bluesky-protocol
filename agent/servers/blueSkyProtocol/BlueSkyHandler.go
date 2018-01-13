@@ -1,7 +1,7 @@
 package servers
 
 import (
-	"github.com/zhifeichen/bluesky-protocol/common/tcpServer"
+	"github.com/zhifeichen/bluesky-protocol/common/server"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"net"
 	"errors"
@@ -11,7 +11,7 @@ type BlueSkyHandler struct {
 
 }
 
-func (h* BlueSkyHandler)Handle(msg interface{},c tcpServer.WriteCloser) error{
+func (h* BlueSkyHandler)Handle(msg interface{},c server.WriteCloser) error{
 	// TODO handler protocol pkt
 	xlogger.Debugf("not implement tcp  msg...")
 
@@ -20,7 +20,7 @@ func (h* BlueSkyHandler)Handle(msg interface{},c tcpServer.WriteCloser) error{
 	return nil
 }
 
-func (h* BlueSkyHandler)HandleUdp(msg interface{},c tcpServer.WriteCloser,remoteAddr *net.UDPAddr) error{
+func (h* BlueSkyHandler)HandleUdp(msg interface{},c server.WriteCloser,remoteAddr *net.UDPAddr) error{
 	// TODO handler protocol pkt
 	xlogger.Debugf("not implement udp  msg...")
 

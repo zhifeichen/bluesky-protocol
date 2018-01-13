@@ -1,4 +1,4 @@
-package tcpServer
+package server
 
 import (
 	"container/heap"

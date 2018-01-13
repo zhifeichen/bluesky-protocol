@@ -1,4 +1,4 @@
-package tcpServer
+package server
 
 import (
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"

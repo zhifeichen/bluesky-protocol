@@ -5,7 +5,7 @@ AtomicBoolean
 ConcurrentMap
 */
 
-package tcpServer
+package server
 
 import (
 	"fmt"
