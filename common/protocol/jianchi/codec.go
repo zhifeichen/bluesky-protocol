@@ -79,14 +79,14 @@ func (r *Response) GenCRC() error {
 
 func (r *Response) Unmarshal(data []byte) error {
 	crc := GenCRC(data[:len(data) - 2])
-	err := binary.Read(bytes.NewBuffer(data), binary.LittleEndian, &r.ResponseHeader)
+	err := binary.Read(bytes.NewBuffer(data), binary.BigEndian, &r.ResponseHeader)
 	if err != nil {
 		return err
 	}
 	if r.Cnt > 0 {
 		r.Body = make([]uint16, r.Cnt / 2)
 		hLen := int(unsafe.Sizeof(r.ResponseHeader))
-		err := binary.Read(bytes.NewBuffer(data[hLen: hLen + int(r.Cnt)]), binary.LittleEndian, r.Body)
+		err := binary.Read(bytes.NewBuffer(data[hLen: hLen + int(r.Cnt)]), binary.BigEndian, r.Body)
 		if err != nil {
 			return err
 		}
