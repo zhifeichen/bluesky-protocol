@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	mockConfig.ParseConfig("./agentMock/mock/config.json")
+	mockConfig.ParseConfig("./mock/config.json")
 	mock.Start()
 }
