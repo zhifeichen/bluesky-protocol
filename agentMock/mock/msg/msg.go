@@ -15,7 +15,7 @@ import (
 )
 
 func open() {
-	msgFile := "./agentMock/mock/msg.txt"
+	msgFile := "./mock/msg.txt"
 	fin, err := os.Open(msgFile)
 	if err != nil {
 		fmt.Println("open file error!", err)
@@ -24,6 +24,9 @@ func open() {
 	defer fin.Close()
 
 	rd := bufio.NewReader(fin)
+
+	sender.SendFile(rd)
+	sender.UDPSendFile(rd)
 	for {
 		line, err := rd.ReadString('\n')
 		if err != nil {
@@ -38,10 +41,25 @@ func open() {
 			fmt.Println(err)
 		}
 		fmt.Printf("%s: %v\n", line, binMsg)
-		sender.Send(binMsg)
-		sender.UDPSend(binMsg)
+		// sender.Send(binMsg)
+		// sender.UDPSend(binMsg)
 		time.Sleep(time.Duration(config.Config().Interval) * time.Second)
 	}
+}
+
+func open2() {
+	msgFile := "./mock/msg.txt"
+	fin, err := os.Open(msgFile)
+	if err != nil {
+		fmt.Println("open file error!", err)
+		return
+	}
+	defer fin.Close()
+
+	rd := bufio.NewReader(fin)
+
+	// sender.SendFile(rd)
+	sender.UDPSendFile(rd)
 }
 
 func HexToBye(hex string) []byte {
@@ -58,5 +76,6 @@ func HexToBye(hex string) []byte {
 }
 
 func Start() {
-	open()
+	go open()
+	open2()
 }

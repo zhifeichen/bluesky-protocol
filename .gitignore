@@ -14,3 +14,4 @@
 .glide/
 bluesky-protocol
 /agent/logs
+.DS_Store
