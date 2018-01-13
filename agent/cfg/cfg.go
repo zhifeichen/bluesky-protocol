@@ -24,6 +24,7 @@ type GlobalConfig struct {
 	Uuid    string `json:"uuid"`
 	LogFile string `json:"logFile"`
 	UDPAddr string `json:"udpAddr"`
+	Timeout int	 `json:"timeout"`
 }
 
 func InitRootDir() {
