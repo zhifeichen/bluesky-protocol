@@ -40,7 +40,7 @@ var (
 	proc = processer{msgChn: make(chan readPackage, 100), sendChn: make(chan writePackage, 100)}
 	lock = sync.RWMutex{}
 	writerMap = sync.Map{}
-	collecterInfoMap = make(map[uint64]collectorInfo)
+	collecterInfoMap = sync.Map{}
 )
 
 func init() {
@@ -58,6 +58,12 @@ func getWriterKey(addr net.Addr) string {
 }
 
 func readLoop(r io.ReadCloser, prot ProtocolHandler, remote net.Addr) {
+	defer func() {
+		if p := recover(); p != nil {
+			xlogger.Errorf("recover error: %v", p)
+		}
+		r.Close()
+	}()
 	scanner := bufio.NewScanner(r)
 	scanner.Split(prot.Split)
 	for scanner.Scan() {
@@ -65,10 +71,11 @@ func readLoop(r io.ReadCloser, prot ProtocolHandler, remote net.Addr) {
 		if msg, id, err := prot.Decode(msgBuf); err != nil {
 			xlogger.Errorf("decode msg[%v] error: %v", msgBuf, err)
 		} else {
-			if info, ok := collecterInfoMap[id]; !ok {
-				collecterInfoMap[id] = collectorInfo{prot, remote}
+			if info, ok := collecterInfoMap.Load(id); !ok {
+				collecterInfoMap.Store(id, collectorInfo{prot, remote})
 			} else {
-				oldKey := getWriterKey(info.remote)
+				i := info.(collectorInfo)
+				oldKey := getWriterKey(i.remote)
 				key := getWriterKey(remote)
 				if oldKey == key {
 					if w, ok := writerMap.Load(key); ok {
@@ -78,13 +85,13 @@ func readLoop(r io.ReadCloser, prot ProtocolHandler, remote net.Addr) {
 						}
 						t.Reset(timeoutDuration)
 					}
+				} else {
+					collecterInfoMap.Store(id, collectorInfo{prot, remote})
 				}
-				collecterInfoMap[id] = collectorInfo{prot, remote}
 			}
 			proc.msgChn <- readPackage{msg, id, remote}
 		}
 	}
-	r.Close()
 	// key := getWriterKey(remote)
 	// if writer, ok := writerMap[key]; ok {
 	// 	c := atomic.AddInt32(&writer.count, -1)
@@ -96,6 +103,12 @@ func readLoop(r io.ReadCloser, prot ProtocolHandler, remote net.Addr) {
 }
 
 func writeLoop() {
+	defer func() {
+		if p := recover(); p != nil {
+			xlogger.Errorf("recover error: %v", p)
+		}
+	}()
+
 	for {
 		msg, ok := <-proc.sendChn
 		if !ok {
@@ -109,18 +122,30 @@ func writeLoop() {
 }
 
 func handleLoop() {
+	defer func() {
+		if p := recover(); p != nil {
+			xlogger.Errorf("recover error: %v", p)
+		}
+	}()
+
 	for {
 		msg, ok := <-proc.msgChn
 		if !ok {
 			break
 		}
-		if c, ok := collecterInfoMap[msg.id]; ok {
-			c.prot.Handle(msg.msg, msg.remote)
+		if c, ok := collecterInfoMap.Load(msg.id); ok {
+			c.(collectorInfo).prot.Handle(msg.msg, msg.remote)
 		}
 	}
 }
 
 func sendMsg(msg interface{}, info collectorInfo) error {
+	defer func() {
+		if p := recover(); p != nil {
+			xlogger.Errorf("recover error: %v", p)
+		}
+	}()
+
 	msgBuf, err := info.prot.Encode(msg)
 	if err != nil {
 		xlogger.Errorf("encode msg error: %v\n", err)
@@ -149,7 +174,7 @@ func Process(r io.ReadCloser, w io.Writer, handler ProtocolHandler, remote net.A
 		oww.timerout.Reset(timeoutDuration)
 	}
 	go readLoop(r, handler, remote)
-	xlogger.Debugf("writeMap: %+v\n", writerMap)
+	// xlogger.Debugf("writeMap: %+v\n", writerMap)
 }
 
 func Stop() {
@@ -158,7 +183,7 @@ func Stop() {
 }
 
 func SendMsg(id uint64, msg interface{}) {
-	if info, ok := collecterInfoMap[id]; ok {
-		sendMsg(msg, info)
+	if info, ok := collecterInfoMap.Load(id); ok {
+		sendMsg(msg, info.(collectorInfo))
 	}
 }
