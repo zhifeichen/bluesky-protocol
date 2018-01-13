@@ -2,7 +2,7 @@
 // each client's message handler is permanently hashed into one specified
 // worker to execute, so it is in-order for each client's perspective.
 
-package tcpServer
+package server
 
 import (
 	"time"

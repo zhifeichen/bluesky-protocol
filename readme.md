@@ -45,7 +45,7 @@
             
             |__ chains                                      流处理组件
                 |__ readme.md                               使用说明
-            |__ tcpServer                                   tcp/udp 通讯框架
+            |__ server                                   tcp/udp 通讯框架
             |   __ readme.md                                使用说明
             
             |__ protocol
@@ -70,7 +70,7 @@
 
 #### tcp/udp server framework   socket服务框架
 
-[tcp/udp 框架说明](common/tcpServer/readme.md)
+[tcp/udp 框架说明](common/server/readme.md)
                 
 #### chains framework  流处理框架
 

@@ -33,6 +33,18 @@ func (c *Common)Len() int {
 	return int(unsafe.Sizeof(c.Header)) + len(c.Data) + 3
 }
 
+func (c *Common) GetSrc() uint64 {
+	var id uint64
+	binary.Read(bytes.NewBuffer(c.Src[:]), binary.LittleEndian, id)
+	return id
+}
+
+func (c *Common) GetDst() uint64 {
+	var id uint64
+	binary.Read(bytes.NewBuffer(c.Dst[:]), binary.LittleEndian, id)
+	return id
+}
+
 func (c *Common) Unmarshal(data []byte) error {
 	//[64 64 0 0 1 1 12 59 12 27 12 17 103 43 0 0 0 0 56 91 1 0 0 0 0 0 2 181 35 35]
 	//if len(data) < 30 {

@@ -1,4 +1,4 @@
-package tcpServer
+package server
 
 import (
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
@@ -354,12 +354,11 @@ func handleUdpLoop(c WriteCloser, wg *sync.WaitGroup) {
 }
 
 func doHandleLoop(hanlder Handler,msg udpHandleMsg,sc *UdpServerConn) (err error){
-	err = hanlder.HandleUdp(msg.d,sc,msg.removeAddr)
 	defer func() {
 		if p := recover(); p != nil {
 			xlogger.Errorf("%s handle panics: %v\n", sc.name, p)
 		}
 	}()
-
+	err = hanlder.HandleUdp(msg.d,sc,msg.removeAddr)
 	return
 }
