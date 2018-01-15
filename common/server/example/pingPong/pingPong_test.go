@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	max_msg int = 200
-	max_gos int = 100
+	max_msg int = 20
+	max_gos int = 10
 )
 
 type PingPongServer struct {
@@ -111,7 +111,7 @@ func TestPingPong(t *testing.T) {
 
 		//fmt.Println("wait msg is done...")
 		var i int
-		timeout := time.NewTimer(time.Second * 5)
+		timeout := time.NewTimer(time.Second * 20)
 	OuterFor:
 		for {
 			select {

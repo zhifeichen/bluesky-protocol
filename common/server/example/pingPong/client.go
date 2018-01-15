@@ -20,7 +20,8 @@ func StartTcpClientSendMsg(ip string, port int, msgsLen int, done chan int) {
 	for i := 0; i < msgsLen; i++ {
 		var buffer bytes.Buffer
 		binary.Write(&buffer, binary.LittleEndian, MAGIC_NUM)
-		body := []byte(fmt.Sprintf("%s-%d", "ping", i))
+		msg := fmt.Sprintf("%s-%d", "ping", i)
+		body := []byte(msg)
 
 		binary.Write(&buffer, binary.LittleEndian, (int16)(len(body)))
 		binary.Write(&buffer, binary.LittleEndian, body)
@@ -48,6 +49,14 @@ func StartTcpClientSendMsg(ip string, port int, msgsLen int, done chan int) {
 			os.Exit(1)
 		}
 		fmt.Println("ack:", string(bodyBuffer))
+		ackMsg := fmt.Sprintf("pong-%s", msg)
+		ack := string(bodyBuffer)
+
+		fmt.Println("udp client ack:", ack)
+		if ack != ackMsg {
+			fmt.Println("tcp client 接收数据错误, except:", ackMsg, " but:", ack)
+			os.Exit(1)
+		}
 		done <- 1
 	}
 
@@ -67,18 +76,26 @@ func StartUdpClientSendMsg(ip string, port int, msgLen int, done chan int) {
 		os.Exit(1)
 	}
 	defer conn.Close()
-	fmt.Println("udp client:",conn.LocalAddr())
+	fmt.Println("udp client:", conn.LocalAddr())
 	for i := 0; i < msgLen; i++ {
 		var buffer bytes.Buffer
-		body := []byte(fmt.Sprintf("%s-%d", "ping", i))
+		msg := fmt.Sprintf("%s-%d", "ping", i)
+		body := []byte(msg)
 		binary.Write(&buffer, binary.LittleEndian, MAGIC_NUM)
 		binary.Write(&buffer, binary.LittleEndian, (int16)(len(body)))
 		binary.Write(&buffer, binary.LittleEndian, body)
 		conn.Write(buffer.Bytes())
 
 		bufferRed := make([]byte, 1500)
-		if n, _, err := conn.ReadFromUDP(bufferRed); err == nil{
-			fmt.Println("udp client ack:", string(bufferRed[4:n]))
+		if n, _, err := conn.ReadFromUDP(bufferRed); err == nil {
+			ackMsg := fmt.Sprintf("pong-%s", msg)
+			ack := string(bufferRed[4:n])
+
+			fmt.Println("udp client ack:", ack)
+			if ack != ackMsg {
+				fmt.Println("udp client 接收数据错误, except:", ackMsg, " but:", ack)
+				os.Exit(1)
+			}
 			done <- 1
 		} else {
 			fmt.Println(err)
