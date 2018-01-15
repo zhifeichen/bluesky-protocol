@@ -10,8 +10,7 @@ import (
 
 // WriteCloser is the interface that groups Write and Close methods.
 type WriteCloser interface {
-	WriteTCP(interface{}) error               // TCP write
-	WriteUDP(interface{}, *net.UDPAddr) error // UDP write
+	Write(interface{}) error // UDP write
 	Close()
 }
 
@@ -135,12 +134,7 @@ func (sc *ServerConn) Close() {
 	})
 }
 
-// Write writes a message to the client.
-func (sc *ServerConn) WriteTCP(msg interface{}) error {
-	return asyncWrite(sc, msg)
-
-}
-func (sc *ServerConn) WriteUDP(msg interface{}, _ *net.UDPAddr) error {
+func (sc *ServerConn) Write(msg interface{}) error {
 	xlogger.Warnf("%s: writeUDP ? maybe use WriteTCP(msg interface{}) instand!")
 	return asyncWrite(sc, msg)
 

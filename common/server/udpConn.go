@@ -5,25 +5,37 @@ import (
 	"net"
 	"sync"
 	"context"
-	"errors"
 	"bytes"
 	"bufio"
+	"errors"
 )
 
-
 // udp server
-type udpSendMsg struct{
-	d		[]byte
-	removeAddr 	*net.UDPAddr
+type udpSendMsg struct {
+	d          []byte
+	removeAddr *net.UDPAddr
 }
 
-type udpHandleMsg struct{
-	d		interface{}
-	removeAddr 	*net.UDPAddr
+type udpHandleMsg struct {
+	d          interface{}
+	removeAddr *net.UDPAddr
+}
+
+type udpMsgConn struct {
+	udpServerConn *UdpServerConn
+	removeAddr    *net.UDPAddr
+}
+
+func (c *udpMsgConn) Write(msg interface{}) error {
+	return asyncUdpWrite(c.udpServerConn, msg, c.removeAddr)
+}
+func (c *udpMsgConn) Close() {
+	xlogger.Warnf("%s: you should never close a udp conn from server!")
+	return
 }
 
 type UdpServerConn struct {
-	mtu 	int
+	mtu     int
 	netId   int64
 	belong  *UDPServer
 	rawConn *net.UDPConn
@@ -33,7 +45,7 @@ type UdpServerConn struct {
 	wg        *sync.WaitGroup
 	sendCh    chan udpSendMsg
 	handlerCh chan udpHandleMsg
-			  //timerCh   chan *OnTimeOut
+	//timerCh   chan *OnTimeOut
 
 	mu     sync.Mutex // guards following
 	ctx    context.Context
@@ -42,12 +54,12 @@ type UdpServerConn struct {
 
 func NewUdpServerConn(id int64, s *UDPServer, c *net.UDPConn) *UdpServerConn {
 	sc := &UdpServerConn{
-		mtu:	1500,
-		netId:   id,
-		belong:  s,
-		rawConn: c,
-		once:    &sync.Once{},
-		wg:      &sync.WaitGroup{},
+		mtu:       1500,
+		netId:     id,
+		belong:    s,
+		rawConn:   c,
+		once:      &sync.Once{},
+		wg:        &sync.WaitGroup{},
 		sendCh:    make(chan udpSendMsg, s.opts.bufferSize),
 		handlerCh: make(chan udpHandleMsg, s.opts.bufferSize),
 	}
@@ -133,17 +145,11 @@ func (sc *UdpServerConn) Close() {
 	})
 }
 
-// Write writes a message to the client.
-func (sc *UdpServerConn) WriteTCP(msg interface{}) error {
-	return errors.New("UDP WRITE NOT IMPLEMENT")
-
-}
-func (sc *UdpServerConn) WriteUDP(msg interface{},remoteAddr *net.UDPAddr) error {
-	return asyncUdpWrite(sc, msg,remoteAddr)
-
+func (sc *UdpServerConn) Write(msg interface{}) error {
+	return errors.New("you should never write a udp server as tcp")
 }
 
-func asyncUdpWrite(c WriteCloser, msg interface{},remoteAddr *net.UDPAddr) (err error) {
+func asyncUdpWrite(sc *UdpServerConn, msg interface{}, remoteAddr *net.UDPAddr) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			err = ErrServerClosed
@@ -154,7 +160,6 @@ func asyncUdpWrite(c WriteCloser, msg interface{},remoteAddr *net.UDPAddr) (err 
 		pkt    []byte
 		sendCh chan udpSendMsg
 	)
-	sc := c.(*UdpServerConn)
 	pkt, err = sc.belong.opts.codec.Encode(msg)
 	sendCh = sc.sendCh
 
@@ -164,7 +169,7 @@ func asyncUdpWrite(c WriteCloser, msg interface{},remoteAddr *net.UDPAddr) (err 
 	}
 
 	select {
-	case sendCh <- udpSendMsg{d:pkt,removeAddr:remoteAddr}:
+	case sendCh <- udpSendMsg{d: pkt, removeAddr: remoteAddr}:
 		err = nil
 	default:
 		err = ErrWouldBlock
@@ -177,8 +182,8 @@ func asyncUdpWrite(c WriteCloser, msg interface{},remoteAddr *net.UDPAddr) (err 
 func udpReadLoop(c WriteCloser, wg *sync.WaitGroup) {
 
 	var (
-		cDone     <-chan struct{}
-		sDone     <-chan struct{}
+		cDone <-chan struct{}
+		sDone <-chan struct{}
 	)
 
 	sc := c.(*UdpServerConn)
@@ -193,7 +198,6 @@ func udpReadLoop(c WriteCloser, wg *sync.WaitGroup) {
 		xlogger.Debug("readLoop go-routine exited")
 		sc.Close()
 	}()
-
 
 	for {
 
@@ -210,7 +214,7 @@ func udpReadLoop(c WriteCloser, wg *sync.WaitGroup) {
 	}
 }
 
-func doReadLoop(sc *UdpServerConn){
+func doReadLoop(sc *UdpServerConn) {
 	var (
 		rawConn   *net.UDPConn
 		handlerCh chan udpHandleMsg
@@ -231,10 +235,10 @@ func doReadLoop(sc *UdpServerConn){
 	}()
 
 	buffer := make([]byte, sc.mtu)
-	if n, remote, err := rawConn.ReadFromUDP(buffer); err != nil{
-		xlogger.Errorf("%s: read data from %v failed: %v\n", sc.name, remote,err)
+	if n, remote, err := rawConn.ReadFromUDP(buffer); err != nil {
+		xlogger.Errorf("%s: read data from %v failed: %v\n", sc.name, remote, err)
 	} else {
-		xlogger.Debug("read data from udp ... n:",n, " err:",err)
+		xlogger.Debug("read data from udp ... n:", n, " err:", err)
 		scanner := bufio.NewScanner(bytes.NewReader(buffer[:n]))
 		scanner.Split(codec.GetScanSplitFun())
 		if ok := scanner.Scan(); ok {
@@ -266,15 +270,14 @@ func doReadLoop(sc *UdpServerConn){
 	}
 }
 
-
 func udpWriteLoop(c WriteCloser, wg *sync.WaitGroup) {
 	var (
-		rawConn  *net.UDPConn
-		sendCh   chan udpSendMsg
-		cDone    <-chan struct{}
-		sDone    <-chan struct{}
-		msg 	udpSendMsg
-		err      error
+		rawConn *net.UDPConn
+		sendCh  chan udpSendMsg
+		cDone   <-chan struct{}
+		sDone   <-chan struct{}
+		msg     udpSendMsg
+		err     error
 	)
 
 	sc := c.(*UdpServerConn)
@@ -309,7 +312,6 @@ func udpWriteLoop(c WriteCloser, wg *sync.WaitGroup) {
 	}
 
 }
-
 
 func handleUdpLoop(c WriteCloser, wg *sync.WaitGroup) {
 	var (
@@ -354,22 +356,22 @@ func handleUdpLoop(c WriteCloser, wg *sync.WaitGroup) {
 		case msg := <-handlerCh:
 			//xlogger.Debugf("%s: hanlde msg ... ",sc.name)
 			if hanlder != nil {
-				err = doHandleLoop(hanlder,msg,sc)
+				err = doHandleLoop(hanlder, msg, sc)
 				if err != nil {
 					xlogger.Errorf("%s: handleloop handle msg error:", sc.name, err)
 				}
 			}
-		// TODO do some thing for timeout??
+			// TODO do some thing for timeout??
 		}
 	}
 }
 
-func doHandleLoop(hanlder Handler,msg udpHandleMsg,sc *UdpServerConn) (err error){
+func doHandleLoop(hanlder Handler, msg udpHandleMsg, sc *UdpServerConn) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			xlogger.Errorf("%s handle panics: %v\n", sc.name, p)
 		}
 	}()
-	err = hanlder.HandleUdp(msg.d,sc,msg.removeAddr)
+	err = hanlder.Handle(msg.d, &udpMsgConn{sc, msg.removeAddr})
 	return
 }

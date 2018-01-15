@@ -2,12 +2,10 @@ package server
 
 import (
 	"bufio"
-	"net"
 )
 
 type Handler interface {
 	Handle(interface{}, WriteCloser) error
-	HandleUdp(interface{}, WriteCloser,*net.UDPAddr) error
 }
 
 type Codec interface {
