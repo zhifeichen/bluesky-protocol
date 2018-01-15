@@ -45,7 +45,7 @@ const (
 
 type onConnectFunc func(WriteCloser) bool
 type onMessageFunc func(interface{}, WriteCloser)
-type onCloseFunc func(WriteCloser)
+type onCloseFunc func(Closer)
 type onErrorFunc func(WriteCloser)
 
 type workerFunc func()

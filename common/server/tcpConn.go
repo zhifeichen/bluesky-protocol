@@ -8,39 +8,23 @@ import (
 	"sync"
 )
 
-// WriteCloser is the interface that groups Write and Close methods.
-type WriteCloser interface {
-	Write(interface{}) error // UDP write
-	Close()
-}
-
 // TCP server conn
-type ServerConn struct {
-	netId   int64
-	belong  *TCPServer
-	rawConn net.Conn
-	name    string
-
-	once      *sync.Once
-	wg        *sync.WaitGroup
-	sendCh    chan []byte
-	handlerCh chan interface{}
-	//timerCh   chan *OnTimeOut
-
-	mu     sync.Mutex // guards following
-	ctx    context.Context
-	cancel context.CancelFunc
+type TcpServerConn struct {
+	ServerConn
 }
 
-func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *ServerConn {
-	sc := &ServerConn{
-		netId:     id,
-		belong:    s,
-		rawConn:   c,
-		once:      &sync.Once{},
-		wg:        &sync.WaitGroup{},
-		sendCh:    make(chan []byte, s.opts.bufferSize),
-		handlerCh: make(chan interface{}, s.opts.bufferSize),
+func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *TcpServerConn {
+	sc := &TcpServerConn{
+		ServerConn: ServerConn{
+			netId:   id,
+			belong:  &s.server,
+			rawConn: c,
+			once:    &sync.Once{},
+			wg:      &sync.WaitGroup{},
+			sendCh:    make(chan connSendMsg, s.opts.bufferSize),
+			handlerCh: make(chan connHandleMsg, s.opts.bufferSize),
+		},
+
 	}
 
 	sc.ctx, sc.cancel = context.WithCancel(context.WithValue(s.ctx, serverCtx, s))
@@ -50,28 +34,16 @@ func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *ServerConn {
 	return sc
 }
 
-func (sc *ServerConn) SetName(name string) {
-	sc.mu.Lock()
-	defer sc.mu.Unlock()
-	sc.name = name
-}
-
-func (sc *ServerConn) GetName() string {
-	sc.mu.Lock()
-	defer sc.mu.Unlock()
-	return sc.name
-}
-
 // Start starts the server connection, creating go-routines for reading,
 // writing and handlng.
-func (sc *ServerConn) Start() {
+func (sc *TcpServerConn) Start() {
 	xlogger.Infof("conn start, <%v -> %v>\n", sc.rawConn.LocalAddr(), sc.rawConn.RemoteAddr())
 	onConnect := sc.belong.opts.onConnect
 	if onConnect != nil {
 		onConnect(sc)
 	}
 
-	loopers := []func(WriteCloser, *sync.WaitGroup){readLoop, writeLoop, handleLoop}
+	loopers := []func(*TcpServerConn, *sync.WaitGroup){readLoop, writeLoop, handleLoop}
 
 	for _, l := range loopers {
 		sc.wg.Add(1)
@@ -80,67 +52,13 @@ func (sc *ServerConn) Start() {
 
 }
 
-// RemoteAddr returns the remote address of server connection.
-func (sc *ServerConn) RemoteAddr() net.Addr {
-	return sc.rawConn.RemoteAddr()
-}
-
-// Close gracefully closes the server connection. It blocked until all sub
-// go-routines are completed and returned.
-func (sc *ServerConn) Close() {
-	sc.once.Do(func() {
-		xlogger.Infof("conn close gracefully, <%v -> %v>\n", sc.rawConn.LocalAddr(), sc.rawConn.RemoteAddr())
-
-		// callback on close
-		onClose := sc.belong.opts.onClose
-		if onClose != nil {
-			onClose(sc)
-		}
-
-		// remove connect from server
-		sc.belong.conns.Delete(sc.netId)
-
-		// TODO 分析?
-		//addTotalConn(-1)
-
-		// close net.Conn, any blocked read or write operation will be unblocked and
-		// return errors.
-		if tc, ok := sc.rawConn.(*net.TCPConn); ok {
-			// avoid time-wait state
-			// TCP将丢弃保留在套接口发送缓冲区中的任何数据并发送一个RST给对方，而不是通常的四分组终止序列，这避免了TIME_WAIT状态
-			tc.SetLinger(0)
-		}
-		sc.rawConn.Close()
-
-		// cancel readLoop, writeLoop and handleLoop go-routines.
-		sc.mu.Lock()
-		sc.cancel()
-
-		sc.mu.Unlock()
-		// clean up pending timers
-		//for _, id := range pending {
-		//	sc.CancelTimer(id)
-		//}
-
-		// wait until all go-routines exited.
-		sc.wg.Wait()
-
-		// close all channels and block until all go-routines exited.
-		close(sc.sendCh)
-		close(sc.handlerCh)
-		//close(sc.timerCh)
-		xlogger.Infof("%s: closed [ok]", sc.name)
-		sc.belong.wg.Done()
-	})
-}
-
-func (sc *ServerConn) Write(msg interface{}) error {
+func (sc *TcpServerConn) Write(msg interface{}) error {
 	xlogger.Warnf("%s: writeUDP ? maybe use WriteTCP(msg interface{}) instand!")
 	return asyncWrite(sc, msg)
 
 }
 
-func asyncWrite(c WriteCloser, msg interface{}) (err error) {
+func asyncWrite(sc *TcpServerConn, msg interface{}) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			err = ErrServerClosed
@@ -149,9 +67,8 @@ func asyncWrite(c WriteCloser, msg interface{}) (err error) {
 
 	var (
 		pkt    []byte
-		sendCh chan []byte
+		sendCh chan connSendMsg
 	)
-	sc := c.(*ServerConn)
 	pkt, err = sc.belong.opts.codec.Encode(msg)
 	sendCh = sc.sendCh
 
@@ -163,7 +80,7 @@ func asyncWrite(c WriteCloser, msg interface{}) (err error) {
 	//xlogger.Debug("asyncWrite:", msg)
 
 	select {
-	case sendCh <- pkt:
+	case sendCh <- connSendMsg{pkt, sc.Addr()}:
 		err = nil
 	default:
 		err = ErrWouldBlock
@@ -177,20 +94,19 @@ func asyncWrite(c WriteCloser, msg interface{}) (err error) {
 3. put msg to handle chan
 4. wait close state
 */
-func readLoop(c WriteCloser, wg *sync.WaitGroup) {
+func readLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
 
 	var (
 		rawConn   net.Conn
 		cDone     <-chan struct{}
 		sDone     <-chan struct{}
-		handlerCh chan interface{}
+		handlerCh chan connHandleMsg
 		err       error
 		onMessage onMessageFunc
 		codec     Codec
 		handler   Handler
 	)
 
-	sc := c.(*ServerConn)
 	rawConn = sc.rawConn
 	cDone = sc.ctx.Done()
 	sDone = sc.belong.ctx.Done()
@@ -205,7 +121,7 @@ func readLoop(c WriteCloser, wg *sync.WaitGroup) {
 		}
 		wg.Done()
 		xlogger.Debug("readLoop go-routine exited")
-		c.Close()
+		sc.Close()
 	}()
 
 	splitFunc := codec.GetScanSplitFun()
@@ -232,7 +148,7 @@ func readLoop(c WriteCloser, wg *sync.WaitGroup) {
 					//setHeartBeatFunc(time.Now().UnixNano())
 					if handler == nil {
 						if onMessage != nil {
-							onMessage(msg, c.(WriteCloser))
+							onMessage(msg, sc)
 						} else {
 							xlogger.Warnf("readLoop no handler or onMessage() found for message\n")
 						}
@@ -240,7 +156,7 @@ func readLoop(c WriteCloser, wg *sync.WaitGroup) {
 
 					//xlogger.Info("put msg to channel ... ")
 
-					handlerCh <- msg
+					handlerCh <- connHandleMsg{d: msg, removeAddr: sc.Addr()}
 
 					continue
 				}
@@ -270,18 +186,17 @@ func readLoop(c WriteCloser, wg *sync.WaitGroup) {
 
 }
 
-func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
+func writeLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
 	var (
 		rawConn  net.Conn
-		sendCh   chan []byte
+		sendCh   chan connSendMsg
 		cDone    <-chan struct{}
 		sDone    <-chan struct{}
-		pkt      []byte
+		pkt      connSendMsg
 		err      error
 		osLinger bool
 	)
 
-	sc := c.(*ServerConn)
 	rawConn = sc.rawConn
 	cDone = sc.ctx.Done()
 	sDone = sc.belong.ctx.Done()
@@ -302,8 +217,8 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 				select {
 				case pkt = <-sendCh:
 					xlogger.Debugf("%s: 发送数据:", sc.name, pkt)
-					if pkt != nil {
-						if _, err = rawConn.Write(pkt); err != nil {
+					if pkt.d != nil {
+						if _, err = rawConn.Write(pkt.d); err != nil {
 							xlogger.Errorf("%s: error writing data %v\n", sc.name, err)
 						}
 					}
@@ -330,8 +245,8 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 			return
 		case pkt = <-sendCh:
 			//xlogger.Debugf("%s: send msg:%v ...", sc.name, pkt)
-			if pkt != nil {
-				if _, err = rawConn.Write(pkt); err != nil {
+			if pkt.d != nil {
+				if _, err = rawConn.Write(pkt.d); err != nil {
 					xlogger.Errorf("%s: writeLoop error writing data %v\n", sc.name, err)
 					return
 				}
@@ -341,19 +256,18 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 
 }
 
-func handleLoop(c WriteCloser, wg *sync.WaitGroup) {
+func handleLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
 	var (
 		cDone <-chan struct{}
 		sDone <-chan struct{}
 		//timerCh      chan *OnTimeOut
-		handlerCh chan interface{}
+		handlerCh chan connHandleMsg
 		//netID        int64
 		//ctx          context.Context
 		//askForWorker bool
 		err     error
 		hanlder Handler
 	)
-	sc := c.(*ServerConn)
 	cDone = sc.ctx.Done()
 	sDone = sc.belong.ctx.Done()
 	//timerCh = c.timerCh
@@ -376,7 +290,7 @@ func handleLoop(c WriteCloser, wg *sync.WaitGroup) {
 			case msg := <-handlerCh:
 				//xlogger.Debugf("%s: hanlde msg ... ")
 				if hanlder != nil {
-					err = hanlder.Handle(msg, c)
+					err = hanlder.Handle(msg.d, sc)
 					if err != nil {
 						xlogger.Errorf("%s: handleloop handle msg error:", sc.name, err)
 					}
@@ -400,7 +314,7 @@ func handleLoop(c WriteCloser, wg *sync.WaitGroup) {
 			return
 		case msg := <-handlerCh:
 			if hanlder != nil {
-				err = hanlder.Handle(msg, c)
+				err = hanlder.Handle(msg.d, sc)
 				if err != nil {
 					xlogger.Errorf("%s: handleloop handle msg error:", sc.name, err)
 				}

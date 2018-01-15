@@ -85,7 +85,7 @@ func OnMessageOption(cb func(interface{}, WriteCloser)) ServerOption {
 
 // OnCloseOption returns a ServerOption that will set callback to call when client
 // closed.
-func OnCloseOption(cb func(WriteCloser)) ServerOption {
+func OnCloseOption(cb func(Closer)) ServerOption {
 	return func(o *options) {
 		o.onClose = cb
 	}
@@ -99,7 +99,7 @@ func OnErrorOption(cb func(WriteCloser)) ServerOption {
 	}
 }
 
-type server struct{
+type server struct {
 	opts          options
 	ctx           context.Context
 	cancel        context.CancelFunc
@@ -129,11 +129,10 @@ func newSuperServer(opts options) server {
 	}
 }
 
-
 // TCP Server
 type TCPServer struct {
 	server
-	lis           map[net.Listener]bool			// TCP listens
+	lis map[net.Listener]bool // TCP listens
 }
 
 // 创建tcpServer
@@ -156,9 +155,8 @@ func NewTCPServer(opt ...ServerOption) (*TCPServer, error) {
 	// initiates go-routine pool instance
 	//globalWorkerPool = newWorkerPool(opts.workerSize)
 	s := &TCPServer{
-		server:newSuperServer(opts),
-		lis:           make(map[net.Listener]bool),
-
+		server: newSuperServer(opts),
+		lis:    make(map[net.Listener]bool),
 	}
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -254,7 +252,6 @@ func (s *TCPServer) Start(l net.Listener) error {
 	return nil
 }
 
-
 // Stop gracefully closes the server, it blocked until all connections
 // are closed and all go-routines are exited.
 func (s *TCPServer) Stop() {
@@ -270,11 +267,11 @@ func (s *TCPServer) Stop() {
 	}
 
 	// close all connections
-	conns := map[int64]*ServerConn{}
+	conns := map[int64]*TcpServerConn{}
 
 	s.conns.Range(func(k, v interface{}) bool {
 		i := k.(int64)
-		c := v.(*ServerConn)
+		c := v.(*TcpServerConn)
 		conns[i] = c
 		return true
 	})
@@ -296,12 +293,10 @@ func (s *TCPServer) Stop() {
 	//s.conns = nil
 }
 
-
 // udp Server
 type UDPServer struct {
 	server
 }
-
 
 // start udp server
 
@@ -324,8 +319,7 @@ func NewUDPServer(opt ...ServerOption) (*UDPServer, error) {
 	// initiates go-routine pool instance
 	//globalWorkerPool = newWorkerPool(opts.workerSize)
 	s := &UDPServer{
-		server:newSuperServer(opts),
-
+		server: newSuperServer(opts),
 	}
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())

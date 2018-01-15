@@ -23,14 +23,14 @@ type PingPongServer struct {
 
 func NewPingPongServer(ip string, port int, handler server.Handler) *PingPongServer {
 	onConnect := server.OnConnectOption(func(conn server.WriteCloser) bool {
-		sc := conn.(*server.ServerConn)
-		xlogger.Info("new pingpongprotocol conn ", sc.RemoteAddr().String(), "...")
+		sc := conn.(*server.TcpServerConn)
+		xlogger.Info("new pingpongprotocol conn ", sc.Addr().String(), "...")
 		return true
 	})
 
-	onDisConnect := server.OnCloseOption(func(conn server.WriteCloser) {
+	onDisConnect := server.OnCloseOption(func(conn server.Closer) {
 		sc := conn.(*server.ServerConn)
-		xlogger.Info("pingpongprotocol conn ", sc.RemoteAddr().String(), " disconnect.")
+		xlogger.Info("pingpongprotocol conn ", sc.Addr().String(), " disconnect.")
 	})
 
 	onCodec := server.OnCustomCodecOption(&PinPongCodec{})
