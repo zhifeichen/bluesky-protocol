@@ -6,7 +6,6 @@ import (
 	"context"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
 	"time"
-	"os"
 )
 
 type options struct {
@@ -279,11 +278,9 @@ func (s *TCPServer) Stop() {
 		conns[i] = c
 		return true
 	})
-	// let GC do the cleanings
-	s.conns = nil
 
 	for _, c := range conns {
-		c.rawConn.Close()
+		c.Close()
 		xlogger.Infof("close client %s\n", c.GetName())
 	}
 
@@ -294,7 +291,9 @@ func (s *TCPServer) Stop() {
 	s.wg.Wait()
 
 	xlogger.Info("server stopped gracefully, bye.")
-	os.Exit(0)
+
+	// let GC do the cleanings
+	//s.conns = nil
 }
 
 

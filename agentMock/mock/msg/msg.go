@@ -15,7 +15,7 @@ import (
 )
 
 func open() {
-	msgFile := "./mock/msg.txt"
+	msgFile := "./agentMock/mock/msg.txt"
 	fin, err := os.Open(msgFile)
 	if err != nil {
 		fmt.Println("open file error!", err)

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"context"
 	"errors"
+	"bytes"
+	"bufio"
 )
 
 
@@ -189,7 +191,7 @@ func udpReadLoop(c WriteCloser, wg *sync.WaitGroup) {
 		}
 		wg.Done()
 		xlogger.Debug("readLoop go-routine exited")
-		c.Close()
+		sc.Close()
 	}()
 
 
@@ -233,27 +235,35 @@ func doReadLoop(sc *UdpServerConn){
 		xlogger.Errorf("%s: read data from %v failed: %v\n", sc.name, remote,err)
 	} else {
 		xlogger.Debug("read data from udp ... n:",n, " err:",err)
-		// TODO 处理decode panic??
-		if msg, e := codec.Decode(buffer[:n]); e != nil {
-			//xlogger.Debug("read data from udp ...s1 n:",n, " err:",e)
-			xlogger.Errorf("%s: error decoding message %v\n", sc.name, e)
-		} else {
-			//setHeartBeatFunc(time.Now().UnixNano())
-			if handler == nil {
-				if onMessage != nil {
-					onMessage(msg, sc)
-				} else {
-					xlogger.Warnf("%s readLoop no handler or onMessage() found for message\n",sc.name)
+		scanner := bufio.NewScanner(bytes.NewReader(buffer[:n]))
+		scanner.Split(codec.GetScanSplitFun())
+		if ok := scanner.Scan(); ok {
+			if msg, e := codec.Decode(scanner.Bytes()); e != nil {
+				xlogger.Errorf("%s: error decoding message %v\n", sc.name, e)
+			} else {
+				//setHeartBeatFunc(time.Now().UnixNano())
+				if handler == nil {
+					if onMessage != nil {
+						onMessage(msg, sc)
+					} else {
+						xlogger.Warnf("%s readLoop no handler or onMessage() found for message\n", sc.name)
+					}
 				}
+				xlogger.Info("put msg to channel ... ", msg)
+				handlerCh <- udpHandleMsg{d: msg, removeAddr: remote}
 			}
+		} else {
+			err = scanner.Err()
+			if err != nil {
+				xlogger.Errorf("%s: error scan bytes %v\n", sc.name, err)
+				return
+			} else {
+				xlogger.Infof("%s: read EOF.. \n", sc.name)
+				return
 
-			//xlogger.Info("put msg to channel ...
-			// ")
-			//xlogger.Debug("read data from udp ...s2 n:",n, " err:",e)
-			handlerCh <- udpHandleMsg{d:msg,removeAddr:remote}
+			}
 		}
 	}
-	//xlogger.Debugf("read msg ...  ok")
 }
 
 
@@ -278,7 +288,7 @@ func udpWriteLoop(c WriteCloser, wg *sync.WaitGroup) {
 		}
 		wg.Done()
 		xlogger.Debugf("%s: writeLoop go-routine exited", sc.name)
-		c.Close()
+		sc.Close()
 	}()
 
 	// 循环发送数据包
@@ -291,6 +301,7 @@ func udpWriteLoop(c WriteCloser, wg *sync.WaitGroup) {
 			xlogger.Debugf("%s: writeLoop receiving cancel signal from server", sc.name)
 			return
 		case msg = <-sendCh:
+			//xlogger.Debugf("%s: write msg:%v",sc.name,msg.d,msg.removeAddr)
 			if _, err = rawConn.WriteToUDP(msg.d, msg.removeAddr); err != nil {
 				xlogger.Errorf("%s: writeLoop error writing data %v\n", sc.name, err)
 			}
@@ -328,7 +339,7 @@ func handleUdpLoop(c WriteCloser, wg *sync.WaitGroup) {
 		}
 		wg.Done()
 		xlogger.Debugf("%s: handleLoop go-routine exited", sc.name)
-		c.Close()
+		sc.Close()
 	}()
 
 	for {

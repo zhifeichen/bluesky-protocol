@@ -10,10 +10,11 @@ import (
 
 // WriteCloser is the interface that groups Write and Close methods.
 type WriteCloser interface {
-	WriteTCP(interface{}) error			// TCP write
-	WriteUDP(interface{},*net.UDPAddr) error	// UDP write
+	WriteTCP(interface{}) error               // TCP write
+	WriteUDP(interface{}, *net.UDPAddr) error // UDP write
 	Close()
 }
+
 // TCP server conn
 type ServerConn struct {
 	netId   int64
@@ -34,11 +35,11 @@ type ServerConn struct {
 
 func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *ServerConn {
 	sc := &ServerConn{
-		netId:   id,
-		belong:  s,
-		rawConn: c,
-		once:    &sync.Once{},
-		wg:      &sync.WaitGroup{},
+		netId:     id,
+		belong:    s,
+		rawConn:   c,
+		once:      &sync.Once{},
+		wg:        &sync.WaitGroup{},
 		sendCh:    make(chan []byte, s.opts.bufferSize),
 		handlerCh: make(chan interface{}, s.opts.bufferSize),
 	}
@@ -129,6 +130,7 @@ func (sc *ServerConn) Close() {
 		close(sc.sendCh)
 		close(sc.handlerCh)
 		//close(sc.timerCh)
+		xlogger.Infof("%s: closed [ok]", sc.name)
 		sc.belong.wg.Done()
 	})
 }
@@ -138,7 +140,7 @@ func (sc *ServerConn) WriteTCP(msg interface{}) error {
 	return asyncWrite(sc, msg)
 
 }
-func (sc *ServerConn) WriteUDP(msg interface{},_ *net.UDPAddr) error {
+func (sc *ServerConn) WriteUDP(msg interface{}, _ *net.UDPAddr) error {
 	xlogger.Warnf("%s: writeUDP ? maybe use WriteTCP(msg interface{}) instand!")
 	return asyncWrite(sc, msg)
 
@@ -163,6 +165,8 @@ func asyncWrite(c WriteCloser, msg interface{}) (err error) {
 		xlogger.Errorf("asyncWrite error %v\n", err)
 		return
 	}
+
+	//xlogger.Debug("asyncWrite:", msg)
 
 	select {
 	case sendCh <- pkt:
@@ -259,8 +263,9 @@ func readLoop(c WriteCloser, wg *sync.WaitGroup) {
 					return
 				} else {
 					// read data EOR
-					xlogger.Infof("%s: read EOF.. \n",sc.name)
-					c.Close()
+					xlogger.Infof("%s: read EOF.. \n", sc.name)
+					//c.Close()
+					return
 
 				}
 
@@ -286,6 +291,7 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 	rawConn = sc.rawConn
 	cDone = sc.ctx.Done()
 	sDone = sc.belong.ctx.Done()
+	sendCh = sc.sendCh
 	// TODO 完善是否发送后续包判断 client , udp
 	// 当为服务器链接时,serverConn在关闭后调用 OS_LINGER == 0
 	osLinger = true
@@ -301,6 +307,7 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 			for {
 				select {
 				case pkt = <-sendCh:
+					xlogger.Debugf("%s: 发送数据:", sc.name, pkt)
 					if pkt != nil {
 						if _, err = rawConn.Write(pkt); err != nil {
 							xlogger.Errorf("%s: error writing data %v\n", sc.name, err)
@@ -313,10 +320,10 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 		}
 		wg.Done()
 		xlogger.Debugf("%s: writeLoop go-routine exited", sc.name)
-		c.Close()
+		sc.Close()
 
 	}()
-
+	xlogger.Debugf("%s: writeLoop go-routine start ...", sc.name)
 	// 循环发送数据包
 
 	for {
@@ -328,6 +335,7 @@ func writeLoop(c WriteCloser, wg *sync.WaitGroup) {
 			xlogger.Debugf("%s: writeLoop receiving cancel signal from server", sc.name)
 			return
 		case pkt = <-sendCh:
+			//xlogger.Debugf("%s: send msg:%v ...", sc.name, pkt)
 			if pkt != nil {
 				if _, err = rawConn.Write(pkt); err != nil {
 					xlogger.Errorf("%s: writeLoop error writing data %v\n", sc.name, err)
@@ -365,10 +373,10 @@ func handleLoop(c WriteCloser, wg *sync.WaitGroup) {
 		if p := recover(); p != nil {
 			xlogger.Errorf("%s: panics: %v\n", sc.name, p)
 		}
-		wg.Done()
+
 		xlogger.Debugf("%s: handleLoop go-routine exited", sc.name)
 
-		OuterFor:
+	OuterFor:
 		for {
 			select {
 			case msg := <-handlerCh:
@@ -379,12 +387,13 @@ func handleLoop(c WriteCloser, wg *sync.WaitGroup) {
 						xlogger.Errorf("%s: handleloop handle msg error:", sc.name, err)
 					}
 				}
-			// TODO do some thing for timeout??
+				// TODO do some thing for timeout??
 			default:
 				break OuterFor
 			}
 		}
-		c.Close()
+		wg.Done()
+		sc.Close()
 	}()
 
 	for {
@@ -396,7 +405,6 @@ func handleLoop(c WriteCloser, wg *sync.WaitGroup) {
 			xlogger.Debugf("%s: handleloop receiving cancel signal from server", sc.name)
 			return
 		case msg := <-handlerCh:
-			xlogger.Debugf("%s: hanlde msg ... ")
 			if hanlder != nil {
 				err = hanlder.Handle(msg, c)
 				if err != nil {
