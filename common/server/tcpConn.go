@@ -8,23 +8,15 @@ import (
 	"sync"
 )
 
-// TCP server conn
-type TcpServerConn struct {
-	ServerConn
-}
-
-func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *TcpServerConn {
-	sc := &TcpServerConn{
-		ServerConn: ServerConn{
-			netId:   id,
-			belong:  &s.server,
-			rawConn: c,
-			once:    &sync.Once{},
-			wg:      &sync.WaitGroup{},
-			sendCh:    make(chan connSendMsg, s.opts.bufferSize),
-			handlerCh: make(chan connHandleMsg, s.opts.bufferSize),
-		},
-
+func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *ServerConn {
+	sc := &ServerConn{
+		netId:     id,
+		belong:    &s.server,
+		rawConn:   c,
+		once:      &sync.Once{},
+		wg:        &sync.WaitGroup{},
+		sendCh:    make(chan connSendMsg, s.opts.bufferSize),
+		handlerCh: make(chan connHandleMsg, s.opts.bufferSize),
 	}
 
 	sc.ctx, sc.cancel = context.WithCancel(context.WithValue(s.ctx, serverCtx, s))
@@ -36,14 +28,14 @@ func NewTcpServerConn(id int64, s *TCPServer, c net.Conn) *TcpServerConn {
 
 // Start starts the server connection, creating go-routines for reading,
 // writing and handlng.
-func (sc *TcpServerConn) Start() {
+func (sc *ServerConn) Start() {
 	xlogger.Infof("conn start, <%v -> %v>\n", sc.rawConn.LocalAddr(), sc.rawConn.RemoteAddr())
 	onConnect := sc.belong.opts.onConnect
 	if onConnect != nil {
 		onConnect(sc)
 	}
 
-	loopers := []func(*TcpServerConn, *sync.WaitGroup){readLoop, writeLoop, handleLoop}
+	loopers := []func(*ServerConn, *sync.WaitGroup){readLoop, writeLoop, handleLoop}
 
 	for _, l := range loopers {
 		sc.wg.Add(1)
@@ -52,13 +44,13 @@ func (sc *TcpServerConn) Start() {
 
 }
 
-func (sc *TcpServerConn) Write(msg interface{}) error {
+func (sc *ServerConn) Write(msg interface{}) error {
 	xlogger.Warnf("%s: writeUDP ? maybe use WriteTCP(msg interface{}) instand!")
 	return asyncWrite(sc, msg)
 
 }
 
-func asyncWrite(sc *TcpServerConn, msg interface{}) (err error) {
+func asyncWrite(sc *ServerConn, msg interface{}) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			err = ErrServerClosed
@@ -89,12 +81,12 @@ func asyncWrite(sc *TcpServerConn, msg interface{}) (err error) {
 }
 
 /**
-1. scan and read data
-2. do codec.decode([]byte) to msg
-3. put msg to handle chan
-4. wait close state
+	1. scan and read data
+	2. do codec.decode([]byte) to msg
+	3. put msg to handle chan
+	4. wait close state
 */
-func readLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
+func readLoop(sc *ServerConn, wg *sync.WaitGroup) {
 
 	var (
 		rawConn   net.Conn
@@ -186,7 +178,7 @@ func readLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
 
 }
 
-func writeLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
+func writeLoop(sc *ServerConn, wg *sync.WaitGroup) {
 	var (
 		rawConn  net.Conn
 		sendCh   chan connSendMsg
@@ -256,7 +248,7 @@ func writeLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
 
 }
 
-func handleLoop(sc *TcpServerConn, wg *sync.WaitGroup) {
+func handleLoop(sc *ServerConn, wg *sync.WaitGroup) {
 	var (
 		cDone <-chan struct{}
 		sDone <-chan struct{}

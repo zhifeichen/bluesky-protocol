@@ -23,7 +23,7 @@ type PingPongServer struct {
 
 func NewPingPongServer(ip string, port int, handler server.Handler) *PingPongServer {
 	onConnect := server.OnConnectOption(func(conn server.WriteCloser) bool {
-		sc := conn.(*server.TcpServerConn)
+		sc := conn.(*server.ServerConn)
 		xlogger.Info("new pingpongprotocol conn ", sc.Addr().String(), "...")
 		return true
 	})

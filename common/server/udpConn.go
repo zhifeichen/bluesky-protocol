@@ -63,7 +63,6 @@ func (sc *UdpServerConn) Start() {
 func (sc *UdpServerConn) Addr() net.Addr {
 	return sc.rawConn.LocalAddr()
 }
-
 func asyncUdpWrite(sc *UdpServerConn, msg interface{}, remoteAddr net.Addr) (err error) {
 	defer func() {
 		if p := recover(); p != nil {

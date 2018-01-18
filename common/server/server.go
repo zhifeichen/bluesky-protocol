@@ -267,11 +267,11 @@ func (s *TCPServer) Stop() {
 	}
 
 	// close all connections
-	conns := map[int64]*TcpServerConn{}
+	conns := map[int64]*ServerConn{}
 
 	s.conns.Range(func(k, v interface{}) bool {
 		i := k.(int64)
-		c := v.(*TcpServerConn)
+		c := v.(*ServerConn)
 		conns[i] = c
 		return true
 	})
