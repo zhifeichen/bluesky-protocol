@@ -6,11 +6,11 @@ package chains
 import (
 	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
-	"github.com/zhifeichen/bluesky-protocol/common/utils"
 	"sync"
 	"time"
 	"strings"
 	"sync/atomic"
+	"github.com/zhifeichen/bluesky-protocol/common"
 )
 
 type LineChain struct {
@@ -195,6 +195,7 @@ func (c *LineChain) handleCtlCtx(ctx *ChainCtx) (err error, stop bool) {
 处理普通消息
 */
 func (c *LineChain) handleCtx(ctx *ChainCtx) error {
+	xlogger.Debug("处理线性 chain:", c.Seqno, "数据:", ctx.String())
 	go c.doCtx(c.items, ctx)
 	return nil
 }
@@ -260,11 +261,11 @@ func (c *LineChain) doItem(step int, item ITask, data interface{}) (interface{},
 		st       int64 = 0
 		duration int64 = 0
 	)
-	st = time.Now().UnixNano() / 1000
+	st = time.Now().UnixNano() / 1000000
 
 	d, err := item.Do(data)
 
-	duration = time.Now().UnixNano()/1000 - st
+	duration = time.Now().UnixNano()/1000000 - st
 	trace := ChainTrace{
 		Name:     item.GetName(),
 		Step:     step,

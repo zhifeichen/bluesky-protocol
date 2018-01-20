@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/zhifeichen/bluesky-protocol/common/xlogger"
-	"github.com/zhifeichen/bluesky-protocol/common/utils"
 	"os"
 	"sync"
 	"log"
+	"github.com/zhifeichen/bluesky-protocol/common"
 )
 
 var (
@@ -17,14 +17,20 @@ var (
 	Root    string
 )
 
+type TransferConfig struct {
+	Interval int `json:"interval"`
+}
+
 type GlobalConfig struct {
-	Debug   bool   `json:"debug"`
-	Ip      string `json:"ip"`
-	Port    int    `json:"port"`
-	Uuid    string `json:"uuid"`
-	LogFile string `json:"logFile"`
-	UDPAddr string `json:"udpAddr"`
-	Timeout int	 `json:"timeout"`
+	Debug    bool            `json:"debug"`
+	Ip       string          `json:"ip"`
+	Port     int             `json:"port"`
+	Uuid     string          `json:"uuid"`
+	LogFile  string          `json:"logFile"`
+	UDPAddr  string          `json:"udpAddr"`
+	Timeout  int             `json:"timeout"`
+	EndPoint string          `json:"endPoint"`
+	Transfer *TransferConfig `json:"transfer"`
 }
 
 func InitRootDir() {

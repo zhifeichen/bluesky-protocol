@@ -1,8 +1,13 @@
-{"debug":true,
-  "ip":"0.0.0.0",
-  "port":10001,
-  "uuid":"G_127.0.0.1:50000",
-  "logFile":"./agent/logs/access.log",
+{
+  "debug": true,
+  "endPoint": "agentxxx",
+  "ip": "0.0.0.0",
+  "port": 10001,
+  "uuid": "G_127.0.0.1:50000",
+  "logFile": "./agent/logs/access.log",
   "udpAddr": ":10001",
-  "timeout": 15
+  "timeout": 15,
+  "transfer": {
+    "interval": 60
+  }
 }

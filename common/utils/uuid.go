@@ -4,7 +4,7 @@
 // http://tools.ietf.org/html/rfc4122
 
 // Package uuid provides functions to create time-based UUIDs.
-package common
+package utils
 
 import (
 	"sync/atomic"

@@ -1,7 +1,7 @@
 package chains
 
 /**
-chains 的消息
+tasks 的消息
 */
 const (
 	CHAIN_ADD_ITEM = iota + 1 // 增加item

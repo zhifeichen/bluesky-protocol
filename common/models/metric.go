@@ -12,6 +12,6 @@ type MetaData struct {
 }
 
 func (t *MetaData) String() string {
-	return fmt.Sprintf("{MetaData Endpoint:%s, Metric:%s,Type:%s, Timestamp:%d, Value:%f, Tags:%v}",
+	return fmt.Sprintf("{MetaData Endpoint:%s, Metric:%s,Type:%s, Timestamp:%d, Value:%v, Tags:%v}",
 		t.Endpoint, t.Metric, t.DataType, t.Timestamp, t.Value, t.Tags)
 }
